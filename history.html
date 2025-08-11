@@ -1,0 +1,1137 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSnap - 截图历史记录</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-gradient: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            --text-color: rgba(0, 0, 0, 0.85);
+            --text-color-secondary: rgba(0, 0, 0, 0.6);
+            --card-bg: rgba(255, 255, 255, 0.6);
+            --card-border: rgba(255, 255, 255, 0.3);
+            --btn-bg: rgba(255, 255, 255, 0.7);
+            --btn-border: rgba(255, 255, 255, 0.4);
+            --btn-color: rgba(0, 0, 0, 0.8);
+            --input-bg: rgba(255, 255, 255, 0.7);
+            --input-border: rgba(255, 255, 255, 0.4);
+            --input-color: rgba(0, 0, 0, 0.8);
+            --shadow-color: rgba(0, 0, 0, 0.1);
+            --shadow-color-hover: rgba(0, 0, 0, 0.15);
+            --danger-color: rgba(255, 59, 48, 0.9);
+            --danger-bg: rgba(255, 59, 48, 0.15);
+            --danger-border: rgba(255, 59, 48, 0.3);
+            --focus-color: rgba(0, 122, 255, 0.5);
+            --focus-shadow: rgba(0, 122, 255, 0.1);
+        }
+        
+        body.dark-mode {
+            --bg-gradient: linear-gradient(135deg, #1a1a1a 0%, #2d3748 100%);
+            --text-color: rgba(255, 255, 255, 0.85);
+            --text-color-secondary: rgba(255, 255, 255, 0.6);
+            --card-bg: #1a1a1a;
+            --card-border: rgba(50, 50, 50, 0.5);
+            --btn-bg: rgba(40, 40, 40, 0.7);
+            --btn-border: rgba(60, 60, 60, 0.6);
+            --btn-color: rgba(255, 255, 255, 0.8);
+            --input-bg: rgba(40, 40, 40, 0.7);
+            --input-border: rgba(60, 60, 60, 0.6);
+            --input-color: rgba(255, 255, 255, 0.8);
+            --shadow-color: rgba(0, 0, 0, 0.3);
+            --shadow-color-hover: rgba(0, 0, 0, 0.4);
+            --danger-color: rgba(255, 69, 58, 0.9);
+            --danger-bg: rgba(255, 69, 58, 0.2);
+            --danger-border: rgba(255, 69, 58, 0.4);
+            --focus-color: rgba(10, 132, 255, 0.6);
+            --focus-shadow: rgba(10, 132, 255, 0.2);
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: var(--bg-gradient);
+            min-height: 100vh;
+            padding: 20px;
+            color: var(--text-color);
+            transition: background 0.3s ease, color 0.3s ease;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            margin-bottom: 40px;
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 
+                0 8px 32px var(--shadow-color),
+                0 1px 0 rgba(255, 255, 255, 0.3) inset;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .header-left {
+            text-align: center;
+        }
+        
+        .header-right {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+        
+        .theme-btn {
+            min-width: 110px;
+            height: 41px; /* 确保与下拉框高度一致 */
+        }
+        
+        .grid-select {
+            width: 120px;
+            padding: 10px 16px;
+            border: 1px solid var(--input-border);
+            border-radius: 12px;
+            background: var(--input-bg);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            color: var(--input-color);
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94), background 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+            box-shadow: 0 2px 8px var(--shadow-color);
+            appearance: none;
+            -webkit-appearance: none;
+            height: 41px; /* 确保与主题按钮高度一致 */
+            box-sizing: border-box;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            background-size: 16px;
+            cursor: pointer;
+        }
+        
+        .grid-select:hover {
+            background-color: var(--input-bg);
+            filter: brightness(1.05);
+            border-color: var(--input-border);
+            box-shadow: 0 4px 16px var(--shadow-color-hover);
+        }
+        
+        .grid-select:focus {
+            outline: none;
+            border-color: var(--focus-color);
+            background-color: var(--input-bg);
+            filter: brightness(1.1);
+            box-shadow: 0 0 0 3px var(--focus-shadow);
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
+            color: var(--text-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94), color 0.3s ease;
+        }
+
+        .header h1 img {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px var(--shadow-color);
+            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            filter: drop-shadow(0 2px 4px var(--shadow-color));
+        }
+
+        .header h1:hover img {
+            transform: scale(1.08) rotate(2deg);
+            box-shadow: 0 6px 20px var(--shadow-color-hover);
+        }
+
+        .header h1:hover {
+            transform: translateY(-1px);
+            transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        .header .subtitle {
+            font-size: 16px;
+            color: var(--text-color-secondary);
+            font-weight: 400;
+            transition: color 0.3s ease;
+        }
+
+        .toolbar {
+            background: var(--card-bg);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            box-shadow: 0 4px 20px var(--shadow-color);
+            transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .stats {
+            font-size: 14px;
+            color: var(--text-color-secondary);
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+
+        .actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .btn {
+            background: var(--btn-bg);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid var(--btn-border);
+            color: var(--btn-color);
+            padding: 10px 16px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94), background 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 2px 8px var(--shadow-color);
+        }
+
+        .btn:hover {
+            background: var(--btn-bg);
+            filter: brightness(1.1);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 16px var(--shadow-color-hover);
+            border-color: var(--btn-border);
+        }
+
+        .btn.danger {
+            background: var(--danger-bg);
+            color: var(--danger-color);
+            border-color: var(--danger-border);
+        }
+
+        .btn.danger:hover {
+            background: var(--danger-bg);
+            filter: brightness(1.2);
+            border-color: var(--danger-border);
+        }
+
+        .search-box {
+            width: 380px;
+            padding: 10px 16px;
+            border: 1px solid var(--input-border);
+            border-radius: 12px;
+            background: var(--input-bg);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            color: var(--input-color);
+            font-size: 10px;
+            font-weight: 500;
+            transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94), background 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+            box-shadow: 0 2px 8px var(--shadow-color);
+        }
+
+        .search-box::placeholder {
+            color: var(--text-color-secondary);
+            opacity: 0.7;
+            font-weight: 400;
+        }
+
+        .search-box:hover {
+            background: var(--input-bg);
+            filter: brightness(1.05);
+            border-color: var(--input-border);
+            box-shadow: 0 4px 16px var(--shadow-color-hover);
+        }
+
+        .search-box:focus {
+            outline: none;
+            border-color: var(--focus-color);
+            background: var(--input-bg);
+            filter: brightness(1.1);
+            box-shadow: 0 0 0 3px var(--focus-shadow);
+            transform: translateY(-1px);
+        }
+
+        .history-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+            transition: grid-template-columns 0.3s ease;
+        }
+
+        .history-item {
+            background: var(--card-bg);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94), background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+            box-shadow: 0 4px 20px var(--shadow-color);
+            position: relative;
+            overflow: hidden;
+        }
+
+        body:not(.dark-mode) .history-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(
+                135deg,
+                rgba(255, 255, 255, 0.3) 0%,
+                rgba(255, 255, 255, 0.1) 50%,
+                rgba(255, 255, 255, 0.2) 100%
+            );
+            border-radius: 16px;
+            pointer-events: none;
+        }
+
+        .history-item:hover {
+            background: var(--card-bg);
+            filter: brightness(1.05);
+            transform: translateY(-4px);
+            box-shadow: 0 12px 40px var(--shadow-color-hover);
+            border-color: var(--card-border);
+        }
+        
+        .edit-form {
+            padding: 10px 0;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .form-group label {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-color);
+            transition: color 0.3s ease;
+        }
+
+        .form-group input, .form-group textarea {
+            padding: 12px 16px;
+            border-radius: 12px;
+            border: 1px solid var(--input-border);
+            background: var(--input-bg);
+            font-size: 14px;
+            color: var(--input-color);
+            font-family: inherit;
+            transition: all 0.2s ease, background 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+            width: 100%;
+        }
+
+        .form-group input:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: var(--focus-color);
+            box-shadow: 0 0 0 3px var(--focus-shadow);
+        }
+        
+        .confirm-dialog {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--shadow-color);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+
+        .confirm-content {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 24px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 10px 40px var(--shadow-color);
+            transition: background 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .confirm-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: var(--text-color);
+            transition: color 0.3s ease;
+        }
+
+        .confirm-message {
+            font-size: 14px;
+            margin-bottom: 24px;
+            color: var(--text-color-secondary);
+            line-height: 1.5;
+            transition: color 0.3s ease;
+        }
+
+        .item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .item-title {
+            font-weight: 600;
+            font-size: 16px;
+            margin-bottom: 4px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            flex: 1;
+            margin-right: 12px;
+            color: var(--text-color);
+            transition: color 0.3s ease;
+        }
+
+        .item-type {
+            background: rgba(0, 122, 255, 0.15);
+            color: rgba(0, 122, 255, 0.9);
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 600;
+            white-space: nowrap;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: background 0.3s ease, color 0.3s ease;
+        }
+
+        body.dark-mode .item-type {
+            background: rgba(10, 132, 255, 0.2);
+            color: rgba(10, 132, 255, 1);
+        }
+
+        .item-subtitle {
+            font-size: 14px;
+            color: var(--text-color-secondary);
+            margin-bottom: 8px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            position: relative;
+            z-index: 1;
+            transition: color 0.3s ease;
+        }
+
+        .item-url {
+            font-size: 12px;
+            color: var(--text-color-secondary);
+            margin-bottom: 8px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            position: relative;
+            z-index: 1;
+            transition: color 0.3s ease;
+        }
+
+        .item-date {
+            font-size: 12px;
+            color: var(--text-color-secondary);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            position: relative;
+            z-index: 1;
+            transition: color 0.3s ease;
+        }
+
+        .item-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid var(--card-border);
+            position: relative;
+            z-index: 1;
+            flex-wrap: wrap;
+        }
+        
+        @media (max-width: 768px) {
+            .item-actions {
+                grid-template-columns: 1fr 1fr;
+                display: grid;
+            }
+            
+            .item-btn {
+                padding: 10px 8px;
+                font-size: 11px;
+            }
+        }
+
+        .item-btn {
+            background: var(--btn-bg);
+            border: 1px solid var(--btn-border);
+            color: var(--btn-color);
+            padding: 8px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            transition: all 0.2s ease, background 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+            text-align: center;
+        }
+
+        .item-btn:hover {
+            background: var(--btn-bg);
+            filter: brightness(1.1);
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px var(--shadow-color);
+        }
+
+        .item-btn.primary {
+            background: rgba(52, 199, 89, 0.15);
+            color: rgba(52, 199, 89, 0.9);
+            border-color: rgba(52, 199, 89, 0.3);
+        }
+        
+        body.dark-mode .item-btn.primary {
+            background: rgba(48, 209, 88, 0.2);
+            color: rgba(48, 209, 88, 1);
+            border-color: rgba(48, 209, 88, 0.4);
+        }
+
+        .item-btn.primary:hover {
+            background: rgba(52, 199, 89, 0.25);
+            border-color: rgba(52, 199, 89, 0.4);
+            filter: brightness(1.1);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 80px 20px;
+            background: var(--card-bg);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
+            box-shadow: 0 8px 32px var(--shadow-color);
+            transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .empty-state h2 {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--text-color);
+            transition: color 0.3s ease;
+        }
+
+        .empty-state p {
+            font-size: 16px;
+            color: var(--text-color-secondary);
+            margin-bottom: 24px;
+            transition: color 0.3s ease;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 60px;
+            font-size: 16px;
+            color: var(--text-color);
+            background: var(--card-bg);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
+            box-shadow: 0 8px 32px var(--shadow-color);
+            transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, color 0.3s ease;
+        }
+
+        /* 弹窗样式 */
+        .modal {
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--shadow-color);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
+            padding: 0;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow: hidden;
+            box-shadow: 0 20px 60px var(--shadow-color);
+            color: var(--text-color);
+            transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, color 0.3s ease;
+        }
+
+        .modal-header {
+            padding: 24px 28px;
+            border-bottom: 1px solid var(--card-border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--card-bg);
+            transition: background 0.3s ease, border-color 0.3s ease;
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-color);
+            transition: color 0.3s ease;
+        }
+
+        .close-btn {
+            font-size: 20px;
+            font-weight: 400;
+            cursor: pointer;
+            color: var(--text-color-secondary);
+            transition: all 0.2s ease, color 0.3s ease, background 0.3s ease;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background: var(--btn-bg);
+        }
+
+        .close-btn:hover {
+            background: var(--btn-bg);
+            filter: brightness(1.1);
+            color: var(--text-color);
+        }
+
+        .modal-body {
+            padding: 28px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .modal-text {
+            font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            user-select: text;
+            -webkit-user-select: text;
+            -moz-user-select: text;
+            -ms-user-select: text;
+            background: var(--input-bg);
+            color: var(--input-color);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid var(--input-border);
+            transition: background 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+        }
+
+        .modal-footer {
+            padding: 20px 28px;
+            border-top: 1px solid var(--card-border);
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+            background: var(--card-bg);
+            transition: background 0.3s ease, border-color 0.3s ease;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 12px;
+            }
+            
+            .header {
+                flex-direction: column;
+                gap: 20px;
+                padding: 20px;
+            }
+            
+            .header-left {
+                text-align: center;
+            }
+            
+            .header-right {
+                flex-direction: column;
+                width: 100%;
+                gap: 10px;
+            }
+            
+            .mode-switch, .grid-options {
+                width: 100%;
+            }
+            
+            .theme-btn, .grid-select {
+                width: 100%;
+            }
+            
+            .header h1 {
+                font-size: 24px;
+                gap: 10px;
+            }
+            
+            .header h1 img {
+                width: 30px;
+                height: 30px;
+            }
+            
+            .history-grid {
+                grid-template-columns: 1fr;
+                gap: 16px;
+            }
+            
+            .toolbar {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 16px;
+            }
+            
+            .actions {
+                justify-content: center;
+                flex-wrap: wrap;
+            }
+
+            .search-box {
+                width: 100%;
+            }
+
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .modal-content {
+                width: 95%;
+                margin: 10px;
+            }
+
+            .modal-footer {
+                flex-direction: column;
+            }
+        }
+
+        /* 赞赏提示样式 */
+        .appreciation-tip {
+            text-align: center;
+            padding: 20px;
+            margin: 20px 0;
+            opacity: 1;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .appreciation-tip:hover {
+            transform: translateY(-2px);
+        }
+
+        .tip-text {
+            color: var(--text-color-secondary);
+            font-size: 14px;
+            font-weight: 500;
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
+            padding: 12px 24px;
+            display: inline-block;
+            box-shadow: 0 4px 16px var(--shadow-color);
+            transition: all 0.3s ease;
+        }
+
+        .tip-text:hover {
+            background: var(--primary-color);
+            color: white;
+            transform: scale(1.05);
+        }
+
+        /* 分隔线样式 */
+        .separator {
+            margin: 40px 0;
+            text-align: center;
+        }
+
+        .separator-line {
+            border: none;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--card-border), transparent);
+            margin: 0 auto;
+            width: 60%;
+            opacity: 0.6;
+        }
+
+        /* 赞赏码模态弹窗样式 */
+        .appreciation-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .appreciation-modal.show {
+            display: flex;
+        }
+
+        .appreciation-content {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
+            padding: 30px;
+            text-align: center;
+            box-shadow: 0 20px 60px var(--shadow-color);
+            animation: scaleIn 0.3s ease;
+            position: relative;
+        }
+
+        .appreciation-image {
+            max-width: 250px;
+            height: auto;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px var(--shadow-color);
+        }
+
+        .appreciation-title {
+            margin-bottom: 20px;
+            color: var(--text-color);
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .close-appreciation {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: var(--text-color-secondary);
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+
+        .close-appreciation:hover {
+            color: var(--text-color);
+        }
+
+        @keyframes scaleIn {
+            from { transform: scale(0.8); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        /* 添加微妙的动画效果 */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .history-item {
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        /* 底部图片样式 */
+        .bottom-image-container {
+            text-align: center;
+            margin: 30px 0 50px 0;
+            padding: 20px;
+        }
+
+        .bottom-image {
+            max-width: 200px;
+            max-height: 150px;
+            width: auto;
+            height: auto;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px var(--shadow-color);
+            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            opacity: 0.8;
+            cursor: pointer;
+        }
+
+        .bottom-image:hover {
+            transform: scale(1.05);
+            box-shadow: 0 12px 40px var(--shadow-color-hover);
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-left">
+                <h1><img src="/icons/icon128.png" alt="WebSnap">WebSnap</h1>
+                <div class="subtitle">管理和查看您的所有截图记录</div>
+            </div>
+            <div class="header-right">
+                <div class="mode-switch">
+                    <button id="themeToggle" class="btn theme-btn">
+                        <span id="themeIcon">🌞</span>
+                        <span id="themeText">日间模式</span>
+                    </button>
+                </div>
+                <div class="grid-options">
+                    <select id="gridSizeSelect" class="grid-select">
+                        <option value="2">每行 2 个</option>
+                        <option value="3" selected>每行 3 个</option>
+                        <option value="4">每行 4 个</option>
+                        <option value="6">每行 6 个</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="toolbar">
+            <div class="stats" id="statsText">
+                正在加载...
+            </div>
+            <div class="actions">
+                <input type="text" class="search-box" id="searchBox" placeholder="🔍 搜索标题、文件名、网址或时间（如：今天、2024、01-15）...">
+                <button class="btn" id="refreshBtn">
+                    <span>🔄</span>
+                    <span>刷新</span>
+                </button>
+                <button class="btn" id="exportBtn">
+                    <span>📤</span>
+                    <span>导出 & 导入</span>
+                </button>
+                <button class="btn danger" id="clearBtn">
+                    <span>🗑️</span>
+                    <span>清空</span>
+                </button>
+                <button class="btn" id="closePageBtn">
+                    <span>✖️</span>
+                    <span>关闭</span>
+                </button>
+            </div>
+        </div>
+
+        <div id="loadingDiv" class="loading">
+            正在加载历史记录...
+        </div>
+
+        <div id="historyContainer" class="history-grid" style="display: none;">
+            <!-- 历史记录项目将在这里动态生成 -->
+        </div>
+
+        <!-- 赞赏提示 -->
+        <div id="appreciationTip" class="appreciation-tip">
+            <div class="tip-text">显示赞赏码</div>
+        </div>
+
+        <!-- 赞赏码模态弹窗 -->
+        <div id="appreciationModal" class="appreciation-modal">
+            <div class="appreciation-content">
+                <button class="close-appreciation" id="closeAppreciation">&times;</button>
+                <div class="appreciation-title">感谢您的支持 ❤️</div>
+                <img src="icons/WechatIMG424.jpg" alt="赞赏码" class="appreciation-image">
+            </div>
+        </div>
+
+        <div id="emptyState" class="empty-state" style="display: none;">
+            <h2>📭 暂无截图历史</h2>
+            <p>您还没有进行过任何截图操作</p>
+            <button class="btn" id="emptyStateCloseBtn">返回主界面</button>
+        </div>
+    </div>
+
+    <!-- 详情弹窗 -->
+    <div id="detailModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>📸 截图详情</h3>
+                <span class="close-btn" id="closeModal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div id="modalContent" class="modal-text"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn" id="copyDetailsBtn">
+                    <span>📋</span>
+                    <span>复制详情</span>
+                </button>
+                <button class="btn" id="closeModalBtn">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 导出选择弹窗 -->
+    <div id="exportModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>📤 导出 & 导入</h3>
+                <span class="close-btn" id="closeExportModal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div style="text-align: center; padding: 20px;">
+                    <p style="margin-bottom: 24px; color: rgba(0, 0, 0, 0.7); font-size: 14px;">
+                        请选择您想要的操作：
+                    </p>
+                    <div style="display: flex; gap: 16px; justify-content: center; flex-wrap: wrap;">
+                        <button class="btn" id="exportDataOnlyBtn" style="min-width: 160px; padding: 16px 24px;">
+                            <span>📄</span>
+                            <span>导出数据</span>
+                            <div style="font-size: 12px; margin-top: 4px; opacity: 0.7;">
+                                仅导出历史记录配置
+                            </div>
+                        </button>
+                        <button class="btn" id="exportWithImagesBtn" style="min-width: 160px; padding: 16px 24px;">
+                            <span>📦</span>
+                            <span>导出完整包</span>
+                            <div style="font-size: 12px; margin-top: 4px; opacity: 0.7;">
+                                包含整个webSnap文件夹
+                            </div>
+                        </button>
+                        <button class="btn" id="importDataBtn" style="min-width: 160px; padding: 16px 24px;">
+                            <span>📥</span>
+                            <span>导入数据</span>
+                            <div style="font-size: 12px; margin-top: 4px; opacity: 0.7;">
+                                从JSON文件导入历史记录
+                            </div>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn" id="cancelExportBtn">取消</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 编辑弹窗 -->
+    <div id="editModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>✏️ 编辑截图信息</h3>
+                <span class="close-btn" id="closeEditModal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="edit-form">
+                    <div class="form-group">
+                        <label for="editFilename">文件名</label>
+                        <input type="text" id="editFilename" class="search-box" placeholder="输入文件名...">
+                    </div>
+                    <div class="form-group">
+                        <label for="editTitle">页面标题</label>
+                        <input type="text" id="editTitle" class="search-box" placeholder="输入页面标题...">
+                    </div>
+                    <div class="form-group">
+                        <label for="editUrl">网页地址</label>
+                        <input type="text" id="editUrl" class="search-box" placeholder="输入网页地址...">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn" id="saveEditBtn" style="background: rgba(52, 199, 89, 0.15); color: rgba(52, 199, 89, 0.9); border-color: rgba(52, 199, 89, 0.3);">
+                    <span>💾</span>
+                    <span>保存</span>
+                </button>
+                <button class="btn" id="cancelEditBtn">取消</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 删除确认弹窗 -->
+    <div id="deleteModal" class="modal" style="display: none;">
+        <div class="modal-content" style="max-width: 450px;">
+            <div class="modal-header">
+                <h3>🗑️ 删除确认</h3>
+                <span class="close-btn" id="closeDeleteModal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div style="padding: 10px; text-align: center;">
+                    <p style="margin-bottom: 20px; font-size: 15px; color: var(--text-color);">
+                        确定要删除这条截图记录吗？（文件不会被删除）
+                    </p>
+                    <p style="font-size: 14px; color: var(--danger-color); margin-bottom: 10px;">
+                        此操作不可恢复！
+                    </p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn danger" id="confirmDeleteBtn">
+                    <span>🗑️</span>
+                    <span>确认删除</span>
+                </button>
+                <button class="btn" id="cancelDeleteBtn">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 隐藏的文件输入元素用于导入 -->
+    <input type="file" id="importFileInput" accept=".json" style="display: none;">
+    
+    <!-- 引入JSZip库 -->
+    <script src="jszip.min.js"></script>
+    <script src="history.js"></script>
+</body>
+</html>

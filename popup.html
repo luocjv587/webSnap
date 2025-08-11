@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body {
+      width: 260px;
+      padding: 0;
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background: transparent;
+      overflow: hidden;
+    }
+    
+    .container {
+      background: rgba(255, 255, 255, 0.75);
+      backdrop-filter: blur(40px) saturate(180%);
+      -webkit-backdrop-filter: blur(40px) saturate(180%);
+      border: 0.5px solid rgba(255, 255, 255, 0.25);
+      border-radius: 16px;
+      padding: 18px;
+      margin: 6px;
+      box-shadow: 
+        0 8px 32px rgba(0, 0, 0, 0.12),
+        0 1px 0 rgba(255, 255, 255, 0.8) inset,
+        0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+      text-align: center;
+      position: relative;
+    }
+    
+    .container::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.6) 0%,
+        rgba(255, 255, 255, 0.0) 50%,
+        rgba(255, 255, 255, 0.4) 100%
+      );
+      border-radius: 16px;
+      pointer-events: none;
+    }
+    
+    .icon {
+      width: 48px;
+      height: 48px;
+      margin: 0 auto 12px;
+      display: block;
+      position: relative;
+      z-index: 1;
+    }
+    
+    .icon img {
+      width: 100%;
+      height: 100%;
+      border-radius: 10px;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+    }
+    
+    h1 {
+      font-size: 16px;
+      font-weight: 600;
+      margin: 0 0 16px 0;
+      color: rgba(0, 0, 0, 0.9);
+      position: relative;
+      z-index: 1;
+      letter-spacing: -0.3px;
+    }
+    
+    .btn {
+      background: rgba(255, 255, 255, 0.65);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      border: 0.5px solid rgba(255, 255, 255, 0.3);
+      color: rgba(0, 0, 0, 0.85);
+      padding: 10px 14px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      width: 100%;
+      margin-bottom: 6px;
+      position: relative;
+      z-index: 1;
+      box-shadow: 0 1px 6px rgba(0, 0, 0, 0.08);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+    }
+    
+    .btn .shortcut {
+      font-size: 11px;
+      color: rgba(0, 0, 0, 0.5);
+      font-weight: 400;
+      background: rgba(0, 0, 0, 0.05);
+      padding: 3px 7px;
+      border-radius: 4px;
+      font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 18px;
+    }
+    
+    .btn-content {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .btn:last-of-type {
+      margin-bottom: 0;
+    }
+    
+    .btn:hover {
+      background: rgba(255, 255, 255, 0.85);
+      transform: translateY(-0.5px);
+      box-shadow: 0 3px 12px rgba(0, 0, 0, 0.12);
+      border-color: rgba(255, 255, 255, 0.5);
+    }
+    
+    .btn:active {
+      transform: translateY(0);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+    
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+    
+    .status {
+      margin-top: 8px;
+      padding: 8px 10px;
+      border-radius: 8px;
+      font-size: 11px;
+      min-height: 0;
+      position: relative;
+      z-index: 1;
+      font-weight: 500;
+      display: none;
+    }
+    
+    .status:not(:empty) {
+      display: block;
+    }
+    
+    .loading {
+      background: rgba(0, 122, 255, 0.1);
+      color: rgba(0, 122, 255, 0.9);
+      border: 1px solid rgba(0, 122, 255, 0.2);
+    }
+    
+    .success {
+      background: rgba(52, 199, 89, 0.1);
+      color: rgba(52, 199, 89, 0.9);
+      border: 1px solid rgba(52, 199, 89, 0.2);
+    }
+    
+    .error {
+      background: rgba(255, 59, 48, 0.1);
+      color: rgba(255, 59, 48, 0.9);
+      border: 1px solid rgba(255, 59, 48, 0.2);
+    }
+    
+    /* 添加微妙的动画效果 */
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-2px); }
+    }
+    
+    .container {
+      animation: float 6s ease-in-out infinite;
+    }
+  </style>
+</head>
+<body>
+  <div class="container main-view" id="mainView">
+    <div class="icon">
+      <img src="/icons/icon128.png" alt="WebSnap">
+    </div>
+    <h1>WebSnap</h1>
+    <button id="captureBtn" class="btn">
+      <div class="btn-content">
+        <span>📸</span>
+        <span>页面快照</span>
+      </div>
+      <span class="shortcut">⇧+⌘+7</span>
+    </button>
+    <button id="fullCaptureBtn" class="btn">
+      <div class="btn-content">
+        <span>📏</span>
+        <span>长截图</span>
+      </div>
+      <span class="shortcut">⇧+⌘+8</span>
+    </button>
+    <button id="areaCaptureBtn" class="btn">
+      <div class="btn-content">
+        <span>🔲</span>
+        <span>区域截图</span>
+      </div>
+      <span class="shortcut">⇧+⌘+9</span>
+    </button>
+    <button id="historyBtn" class="btn">
+      <div class="btn-content">
+        <span>📋</span>
+        <span>历史记录</span>
+      </div>
+      <span class="shortcut">⇧+⌘+0</span>
+    </button>
+    <div id="status" class="status"></div>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>

@@ -1,0 +1,58 @@
+{
+  "manifest_version": 3,
+  "name": "WebSnap",
+  "version": "1.1",
+  "description": "网页截图、自动命名、截图管理的Chrome扩展",
+  "permissions": [
+    "activeTab",
+    "downloads",
+    "storage",
+    "tabs",
+    "scripting"
+  ],
+  "host_permissions": [
+    "file://*"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "WebSnap"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "commands": {
+    "capture-normal": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+7",
+        "mac": "Command+Shift+7"
+      },
+      "description": "页面快照"
+    },
+    "capture-full": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+8",
+        "mac": "Command+Shift+8"
+      },
+      "description": "长截图"
+    },
+    "capture-area": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+9",
+        "mac": "Command+Shift+9"
+      },
+      "description": "区域截图"
+    },
+    "open-history": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+0",
+        "mac": "Command+Shift+0"
+      },
+      "description": "历史记录"
+    }
+  }
+}
