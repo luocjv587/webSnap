@@ -1,4 +1,4 @@
-# WebSnap - 网页快照工具
+# WebSnap
 
 一个功能强大的Chrome浏览器扩展，可以快速截取网页快照、自动命名保存、统一管理。
 
@@ -13,46 +13,15 @@
 - ⌨️ **快捷键支持**: 支持键盘快捷键快速截图
 - 🌙 **主题切换**: 支持日间/夜间模式切换
 
-## 准备工作
-
-在安装插件之前，你需要准备一些图标文件。由于项目中的SVG图标需要转换为PNG格式，请按照以下步骤操作：
-
-### 生成图标文件
-
-你需要将 `icons/icon.svg` 转换为以下尺寸的PNG文件：
-- `icons/icon16.png` (16x16像素)
-- `icons/icon48.png` (48x48像素)  
-- `icons/icon128.png` (128x128像素)
-
-你可以使用以下方法之一：
-
-#### 方法A：在线转换工具
-1. 访问 https://convertio.co/svg-png/ 或类似的在线转换工具
-2. 上传 `icons/icon.svg` 文件
-3. 分别设置输出尺寸为16x16、48x48、128x128
-4. 下载转换后的PNG文件并重命名
-
-#### 方法B：使用图像编辑软件
-1. 使用Photoshop、GIMP或Inkscape等软件
-2. 打开SVG文件
-3. 导出为不同尺寸的PNG文件
-
-#### 方法C：使用命令行工具（如果你有ImageMagick）
-```bash
-convert icons/icon.svg -resize 16x16 icons/icon16.png
-convert icons/icon.svg -resize 48x48 icons/icon48.png
-convert icons/icon.svg -resize 128x128 icons/icon128.png
-```
 
 ## 安装方法
 
 ### 方法一：Chrome 插件市场安装（推荐）
 
 1. 打开 Chrome 浏览器
-2. 访问 [Chrome Web Store](https://chrome.google.com/webstore/category/extensions)
-3. 搜索 "WebSnap" 或 "网页快照工具"
-4. 点击 "添加至 Chrome" 按钮
-5. 在弹出的确认对话框中点击 "添加扩展程序"
+2. 直接访问：https://chromewebstore.google.com/detail/websnap/lekllokjgmdnidpkhmfbbhoiagkpilfp
+3. 点击 "添加至 Chrome" 按钮
+4. 在弹出的确认对话框中点击 "添加扩展程序"
 6. 安装完成后，插件图标会出现在浏览器工具栏中
 
 ### 方法二：本地二次开发安装
@@ -109,7 +78,7 @@ convert icons/icon.svg -resize 128x128 icons/icon128.png
    - 点击"选择文件夹"
 
 5. **验证安装**
-   - 如果安装成功，你会在扩展列表中看到"WebSnap - 网页快照工具"
+   - 如果安装成功，你会在扩展列表中看到"WebSnap"
    - 插件图标会出现在浏览器工具栏中
 
 #### 步骤4：配置开发环境
