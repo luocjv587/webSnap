@@ -46,26 +46,52 @@ convert icons/icon.svg -resize 128x128 icons/icon128.png
 
 ## 安装方法
 
-### 步骤1：准备文件
-确保你的项目文件夹包含以下文件：
-```
-webSnap/
-├── manifest.json
-├── popup.html
-├── popup.js
-├── background.js
-├── history.html
-├── history.js
-├── jszip.min.js
-├── icons/
-│   ├── icon16.png
-│   ├── icon48.png
-│   └── icon128.png
-├── README.md
-└── INSTALL.md
-```
+### 方法一：Chrome 插件市场安装（推荐）
 
-### 步骤2：在Chrome中安装
+1. 打开 Chrome 浏览器
+2. 访问 [Chrome Web Store](https://chrome.google.com/webstore/category/extensions)
+3. 搜索 "WebSnap" 或 "网页快照工具"
+4. 点击 "添加至 Chrome" 按钮
+5. 在弹出的确认对话框中点击 "添加扩展程序"
+6. 安装完成后，插件图标会出现在浏览器工具栏中
+
+### 方法二：本地二次开发安装
+
+适用于开发者进行功能定制和二次开发。
+
+#### 步骤1：准备开发环境
+
+1. **克隆或下载项目**
+   ```bash
+   git clone [项目地址]
+   cd webSnap
+   ```
+
+2. **确保项目文件完整**
+   ```
+   webSnap/
+   ├── manifest.json
+   ├── popup.html
+   ├── popup.js
+   ├── background.js
+   ├── history.html
+   ├── history.js
+   ├── jszip.min.js
+   ├── icons/
+   │   ├── icon16.png
+   │   ├── icon48.png
+   │   └── icon128.png
+   └── README.md
+   ```
+
+#### 步骤2：生成图标文件（如需要）
+
+如果图标文件缺失，需要将 `icons/icon.svg` 转换为PNG格式：
+- `icons/icon16.png` (16x16像素)
+- `icons/icon48.png` (48x48像素)  
+- `icons/icon128.png` (128x128像素)
+
+#### 步骤3：在Chrome中加载开发版本
 
 1. **打开Chrome浏览器**
 
@@ -86,18 +112,27 @@ webSnap/
    - 如果安装成功，你会在扩展列表中看到"WebSnap - 网页快照工具"
    - 插件图标会出现在浏览器工具栏中
 
-### 步骤3：测试插件
+#### 步骤4：配置开发环境
 
-1. **打开任意网页**（比如百度、谷歌等）
+1. **启用文件访问权限**
+   - 在扩展管理页面找到 WebSnap
+   - 点击"详细信息"
+   - 开启"允许访问文件网址"选项
 
-2. **点击插件图标**
-   - 在浏览器工具栏中找到WebSnap图标
-   - 点击图标打开弹出窗口
+2. **测试插件功能**
+   - 打开任意网页
+   - 点击插件图标测试各项功能
+   - 检查浏览器控制台是否有错误信息
 
-3. **测试截图功能**
-   - 点击"📸 截取网页快照"按钮
-   - 等待处理完成
-   - 检查下载文件夹中是否有生成的图片文件
+#### 步骤5：开发和调试
+
+1. **修改代码后重新加载**
+   - 在扩展管理页面点击 WebSnap 的"重新加载"按钮
+   - 刷新测试页面
+
+2. **查看调试信息**
+   - 右键点击插件图标 → 检查弹出内容
+   - 在开发者工具中查看 Console 日志
 
 ## 使用方法
 
@@ -112,10 +147,10 @@ webSnap/
 4. 等待处理完成，图片将自动保存到下载目录的webSnap文件夹
 
 ### 快捷键操作
-- `Ctrl+Shift+1` (Mac: `Cmd+Shift+1`): 普通截图
-- `Ctrl+Shift+2` (Mac: `Cmd+Shift+2`): 长截图
-- `Ctrl+Shift+3` (Mac: `Cmd+Shift+3`): 区域截图
-- `Ctrl+Shift+H` (Mac: `Cmd+Shift+H`): 打开历史记录
+- `Ctrl+Shift+7` (Mac: `Cmd+Shift+7`): 普通截图
+- `Ctrl+Shift+8` (Mac: `Cmd+Shift+8`): 长截图
+- `Ctrl+Shift+9` (Mac: `Cmd+Shift+9`): 区域截图
+- `Ctrl+Shift+0` (Mac: `Cmd+Shift+0`): 打开历史记录
 
 ## 故障排除
 
@@ -135,6 +170,14 @@ A: 检查是否有固定定位元素干扰，或者页面动态加载内容较�
 
 **Q: 图片没有下载？**
 A: 检查Chrome的下载设置，确保下载目录可写。某些浏览器可能阻止自动下载。
+
+**Q: 点击图片查看不了或历史记录中图片无法显示？**
+A: 需要在插件管理页面为 WebSnap 开启文件访问权限：
+   1. 打开 `chrome://extensions/`
+   2. 找到 WebSnap 扩展
+   3. 点击"详细信息"
+   4. 开启"允许访问文件网址"选项
+   5. 刷新历史记录页面即可正常查看图片
 
 ### 调试方法
 
