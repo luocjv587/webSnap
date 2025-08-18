@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "WebSnap",
-  "version": "1.1",
+  "version": "1.2",
   "description": "网页截图、自动命名、截图管理的Chrome扩展",
   "permissions": [
     "activeTab",
