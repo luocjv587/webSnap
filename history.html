@@ -1057,6 +1057,45 @@
             font-size: 11px;
         }
 
+        /* 缩略图样式（更新：更小更贴边） */
+        .item-thumb {
+            margin: 2px 4px 4px 8px; /* 更小边距，更贴边 */
+            border-radius: 6px;
+            overflow: hidden;
+            width: 80px;             /* 更小宽度 */
+            height: 60px;        /* 更小高度 */
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            transition: all 0.3s ease;
+            float: right;            /* 右侧对齐 */
+            cursor: pointer;         /* 鼠标指针样式 */
+        }
+        
+        .item-thumb:hover {
+            transform: scale(1.05);  /* 悬停时轻微放大 */
+            border-color: var(--focus-color); /* 悬停时边框变色 */
+            box-shadow: 0 2px 8px var(--focus-shadow); /* 悬停时添加阴影 */
+        }
+
+        .item-thumb img {
+            width: 100%;
+            height: auto;
+            max-height: 60px;
+            object-fit: cover;
+            display: block;
+        }
+
+        /* 确保按钮区不被浮动影响，显示在缩略图下方 */
+        .history-item .item-actions,
+        .timeline-screenshot .item-actions {
+            clear: both;
+        }
+
+        .timeline-screenshot .item-btn {
+            padding: 6px 10px;
+            font-size: 11px;
+        }
+
         /* 响应式调整 */
         @media (max-width: 768px) {
             .timeline-item {

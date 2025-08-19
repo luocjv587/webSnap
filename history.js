@@ -209,6 +209,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             minute: '2-digit'
         });
         const type = item.type || 'unknown';
+        const thumbHTML = item.thumbnail ? `<div class="item-thumb"><img src="${item.thumbnail}" alt="缩略图"></div>` : '';
         
         screenshotDiv.innerHTML = `
             <div class="item-header">
@@ -217,6 +218,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             </div>
             <div class="item-subtitle" title="${title}">${title}</div>
             <div class="item-url" title="${url}">🌐 ${url}</div>
+            ${thumbHTML}
             <div class="item-date">
                 <span>⏰ ${time}</span>
             </div>
@@ -273,6 +275,16 @@ document.addEventListener('DOMContentLoaded', async function() {
                 chrome.tabs.create({ url: item.url });
             });
         }
+        
+        // 点击缩略图查看图片
+        const thumbElement = itemElement.querySelector('.item-thumb');
+        if (thumbElement) {
+            thumbElement.style.cursor = 'pointer';
+            thumbElement.addEventListener('click', (e) => {
+                e.stopPropagation();
+                openImageFile(item);
+            });
+        }
     }
     
     // 创建历史项目元素
@@ -285,6 +297,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         const url = item.url || '未知URL';
         const date = item.date || new Date(item.timestamp || Date.now()).toLocaleString('zh-CN');
         const type = item.type || 'unknown';
+        const thumbHTML = item.thumbnail ? `<div class="item-thumb"><img src="${item.thumbnail}" alt="缩略图"></div>` : '';
         
         itemDiv.innerHTML = `
             <div class="item-header">
@@ -293,6 +306,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             </div>
             <div class="item-subtitle" title="${title}">${title}</div>
             <div class="item-url" title="${url}">🌐 ${url}</div>
+            ${thumbHTML}
             <div class="item-date">
                 <span>📅 ${date}</span>
             </div>

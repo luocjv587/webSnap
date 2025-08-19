@@ -124,15 +124,7 @@ document.addEventListener('DOMContentLoaded', function() {
       }, function(response) {
         if (response && response.success) {
           updateStatus('✅ 截图已保存！', 'success');
-          
-          // 保存到历史记录
-          saveToHistory(tab.url, tab.title, 'normal', response)
-            .then(() => {
-              console.log('普通截图已保存到历史记录');
-            })
-            .catch(error => {
-              console.error('保存历史记录失败:', error);
-            });
+          console.log('普通截图完成，历史记录已由background script保存');
         } else {
           const errorMsg = response ? response.error : '操作失败';
           updateStatus('❌ 操作失败: ' + errorMsg, 'error');

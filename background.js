@@ -168,12 +168,16 @@ async function captureAndSave(url, title) {
     
     // 5. 保存截图数据供历史记录使用
     lastCaptureData = imageData;
+
+    // 5.1 生成缩略图
+    const thumbnailData = await generateThumbnail(imageData);
     
     // 6. 直接保存到历史记录
     await saveToHistoryInBackground(url, title, 'normal', {
       filename: filename,
       downloadId: downloadResult.downloadId,
-      fullPath: downloadResult.fullPath
+      fullPath: downloadResult.fullPath,
+      thumbnail: thumbnailData
     });
     
     return { 
@@ -203,8 +207,12 @@ async function captureFullPageV2(url, title) {
       // 页面很短且没有可滚动内容，直接截图
       const result = await captureSimplePage(tab, title);
       
+      // 读取原图以生成缩略图
+      const imageData = lastCaptureData;
+      const thumbnailData = imageData ? await generateThumbnail(imageData) : null;
+      
       // 保存到历史记录
-      await saveToHistoryInBackground(url, title, 'full', result);
+      await saveToHistoryInBackground(url, title, 'full', { ...result, thumbnail: thumbnailData });
       
       return result;
     }
@@ -219,6 +227,9 @@ async function captureFullPageV2(url, title) {
     // 5. 拼接图片
     const finalImage = await stitchImages(tab.id, screenshots, pageInfo, pageInfo.hasScrollableContent);
     
+    // 生成缩略图
+    const thumbnailData = await generateThumbnail(finalImage);
+    
     // 6. 保存和下载
     const filename = generateFilename(title + '_长截图');
     const downloadResult = await downloadImage(finalImage, filename);
@@ -230,7 +241,8 @@ async function captureFullPageV2(url, title) {
     await saveToHistoryInBackground(url, title, 'full', {
       filename: filename,
       downloadId: downloadResult.downloadId,
-      fullPath: downloadResult.fullPath
+      fullPath: downloadResult.fullPath,
+      thumbnail: thumbnailData
     });
     
     // 9. 恢复页面状态
@@ -1262,6 +1274,86 @@ async function downloadImage(imageData, filename) {
   }
 }
 
+// 生成缩略图
+async function generateThumbnail(imageData, maxWidth = 200, maxHeight = 150) {
+  try {
+    // 在当前活动标签页中执行生成缩略图的操作
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    
+    if (!tab) {
+      console.warn('无法获取当前标签页，使用原图作为缩略图');
+      return imageData;
+    }
+    
+    const result = await chrome.scripting.executeScript({
+      target: { tabId: tab.id },
+      func: createThumbnailInContent,
+      args: [imageData, maxWidth, maxHeight]
+    });
+    
+    if (result && result[0] && result[0].result) {
+      return result[0].result;
+    } else {
+      console.warn('缩略图生成失败，使用原图');
+      return imageData;
+    }
+  } catch (error) {
+    console.error('生成缩略图失败:', error);
+    return imageData; // 失败时返回原图
+  }
+}
+
+// 在content script中创建缩略图
+function createThumbnailInContent(imageDataUrl, maxWidth, maxHeight) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    
+    img.onload = function() {
+      try {
+        // 计算缩略图尺寸，保持宽高比
+        let { width, height } = img;
+        
+        if (width > maxWidth || height > maxHeight) {
+          const aspectRatio = width / height;
+          
+          if (aspectRatio > maxWidth / maxHeight) {
+            // 宽度为限制因子
+            width = maxWidth;
+            height = width / aspectRatio;
+          } else {
+            // 高度为限制因子
+            height = maxHeight;
+            width = height * aspectRatio;
+          }
+        }
+        
+        // 创建canvas生成缩略图
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        canvas.width = Math.round(width);
+        canvas.height = Math.round(height);
+        
+        // 绘制缩放后的图片
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        
+        // 转换为base64，使用较低质量以减小文件大小
+        const thumbnailData = canvas.toDataURL('image/jpeg', 0.7);
+        
+        resolve(thumbnailData);
+      } catch (error) {
+        reject(error);
+      }
+    };
+    
+    img.onerror = function() {
+      reject(new Error('图片加载失败'));
+    };
+    
+    img.src = imageDataUrl;
+  });
+}
+
 
 
 // 读取文件内容
@@ -1547,13 +1639,20 @@ async function captureAreaScreenshot(url, title) {
     // 下载图片
     const downloadResult = await downloadImage(croppedImage, filename);
     
+    // 保存最近截图数据
+    lastCaptureData = croppedImage;
+
+    // 生成缩略图
+    const thumbnailData = await generateThumbnail(croppedImage);
+    
     console.log('区域截图完成:', filename);
     
     // 直接保存到历史记录
     await saveToHistoryInBackground(url, title, 'area', {
       filename: filename,
       downloadId: downloadResult.downloadId,
-      fullPath: downloadResult.fullPath
+      fullPath: downloadResult.fullPath,
+      thumbnail: thumbnailData
     });
     
     return {
@@ -1585,7 +1684,9 @@ async function saveToHistoryInBackground(url, title, type, captureResult = null)
       filename: filename,
       date: now.toLocaleString('zh-CN'), // 预格式化的日期字符串
       downloadId: captureResult ? captureResult.downloadId : null,
-      fullPath: captureResult ? captureResult.fullPath : null
+      fullPath: captureResult ? captureResult.fullPath : null,
+      // 新增：缩略图数据（data URL，较小体积）
+      thumbnail: captureResult && captureResult.thumbnail ? captureResult.thumbnail : null
     };
     
     // 获取现有历史记录
