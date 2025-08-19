@@ -236,7 +236,10 @@ async function captureFullPageV2(url, title) {
     // 9. 恢复页面状态
     await restorePageState(tab.id, pageInfo);
     
-    // 10. 通知完成
+    // 10. 刷新页面
+    await chrome.tabs.reload(tab.id);
+    
+    // 11. 通知完成
     try {
       chrome.runtime.sendMessage({
         action: 'captureComplete',
@@ -1201,43 +1204,14 @@ async function stitchImages(tabId, screenshots, pageInfo, hasScrollableContent =
 async function restorePageState(tabId, pageInfo) {
   await chrome.scripting.executeScript({
     target: { tabId },
-    func: (scroll, fixedElements) => {
+    func: (scroll) => {
       // 恢复滚动位置
       window.scrollTo(scroll.x, scroll.y);
       
-      // 恢复被隐藏的固定元素
-      if (fixedElements && fixedElements.length > 0) {
-        fixedElements.forEach(item => {
-          try {
-            // 尝试通过选择器找到元素
-            const elements = document.querySelectorAll(item.selector);
-            elements.forEach(el => {
-              if (el.style.display === 'none') {
-                el.style.display = item.originalDisplay;
-                el.style.visibility = item.originalVisibility;
-                console.log('恢复固定元素:', item.selector);
-              }
-            });
-          } catch (e) {
-            console.warn('恢复固定元素失败:', item.selector, e);
-          }
-        });
-      }
-      
-      // 最终清理：恢复所有可能遗留的临时隐藏元素
-      const allElements = document.querySelectorAll('*');
-      for (const el of allElements) {
-        if (el.dataset && el.dataset.tempHidden === 'true') {
-          el.style.display = el.dataset.originalDisplay || '';
-          el.style.visibility = el.dataset.originalVisibility || '';
-          delete el.dataset.tempHidden;
-          delete el.dataset.originalDisplay;
-          delete el.dataset.originalVisibility;
-          console.log('最终清理临时隐藏元素:', el.tagName, el.className);
-        }
-      }
+      // 不再恢复固定元素，让页面保持刷新后的状态
+      console.log('页面已恢复滚动位置，固定元素保持隐藏状态');
     },
-    args: [pageInfo.originalScroll, pageInfo.fixedElements || []]
+    args: [pageInfo.originalScroll]
   });
 }
 
