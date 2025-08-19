@@ -5,6 +5,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     
     const loadingDiv = document.getElementById('loadingDiv');
     const historyContainer = document.getElementById('historyContainer');
+    const timelineContainer = document.getElementById('timelineContainer');
     const emptyState = document.getElementById('emptyState');
     const appreciationModal = document.getElementById('appreciationModal');
     const closeAppreciation = document.getElementById('closeAppreciation');
@@ -17,9 +18,12 @@ document.addEventListener('DOMContentLoaded', async function() {
     const themeIcon = document.getElementById('themeIcon');
     const themeText = document.getElementById('themeText');
     const gridSizeSelect = document.getElementById('gridSizeSelect');
+    const viewModeSelect = document.getElementById('viewModeSelect');
     
     let allHistory = [];
     let filteredHistory = [];
+    let currentViewMode = 'grid'; // 当前视图模式：'grid' 或 'timeline'
+    let currentHistory = []; // 当前显示的历史记录数据
     
     // 加载历史记录数据
     async function loadHistory() {
@@ -59,16 +63,22 @@ document.addEventListener('DOMContentLoaded', async function() {
             history = []; // 设置为空数组作为默认值
         }
         
+        // 保存当前历史记录数据
+        currentHistory = history;
+        
         console.log('处理后的history数量:', history.length);
         
+        // 清空两个容器
         historyContainer.innerHTML = '';
+        timelineContainer.innerHTML = '';
         
         if (history.length === 0) {
             loadingDiv.style.display = 'none';
-        historyContainer.style.display = 'none';
-        appreciationTip.style.display = 'none';
-        appreciationModal.classList.remove('show');
-        emptyState.style.display = 'block';
+            historyContainer.style.display = 'none';
+            timelineContainer.style.display = 'none';
+            appreciationTip.style.display = 'none';
+            appreciationModal.classList.remove('show');
+            emptyState.style.display = 'block';
             statsText.textContent = '共 0 条记录';
             return;
         }
@@ -79,14 +89,14 @@ document.addEventListener('DOMContentLoaded', async function() {
         const areaCount = history.filter(item => item.type === 'area').length;
         statsText.textContent = `共 ${history.length} 条记录 (普通截图: ${normalCount}, 长截图: ${fullCount}, 区域截图: ${areaCount})`;
         
-        // 生成历史项目
-        history.forEach(item => {
-            const historyItem = createHistoryItem(item);
-            historyContainer.appendChild(historyItem);
-        });
+        // 根据当前视图模式显示不同布局
+        if (currentViewMode === 'timeline') {
+            displayTimelineView(history);
+        } else {
+            displayGridView(history);
+        }
         
         loadingDiv.style.display = 'none';
-        historyContainer.style.display = 'grid';
         appreciationTip.style.display = 'block';
         appreciationModal.classList.remove('show');
         emptyState.style.display = 'none';
@@ -96,6 +106,173 @@ document.addEventListener('DOMContentLoaded', async function() {
         initScrollListener();
         
         console.log('历史记录显示完成');
+    }
+    
+    // 显示网格视图
+    function displayGridView(history) {
+        // 生成历史项目
+        history.forEach(item => {
+            const historyItem = createHistoryItem(item);
+            historyContainer.appendChild(historyItem);
+        });
+        
+        historyContainer.style.display = 'grid';
+        timelineContainer.style.display = 'none';
+    }
+    
+    // 显示时间轴视图
+    function displayTimelineView(history) {
+        // 按日期分组历史记录
+        const groupedHistory = groupHistoryByDate(history);
+        
+        // 按日期倒序排列
+        const sortedDates = Object.keys(groupedHistory).sort((a, b) => new Date(b) - new Date(a));
+        
+        sortedDates.forEach(date => {
+            const timelineItem = createTimelineItem(date, groupedHistory[date]);
+            timelineContainer.appendChild(timelineItem);
+        });
+        
+        historyContainer.style.display = 'none';
+        timelineContainer.style.display = 'block';
+        timelineContainer.classList.add('active');
+    }
+    
+    // 按日期分组历史记录
+    function groupHistoryByDate(history) {
+        const grouped = {};
+        
+        history.forEach(item => {
+            const timestamp = item.timestamp || Date.now();
+            const date = new Date(timestamp);
+            const dateKey = date.toLocaleDateString('zh-CN');
+            
+            if (!grouped[dateKey]) {
+                grouped[dateKey] = [];
+            }
+            grouped[dateKey].push(item);
+        });
+        
+        return grouped;
+    }
+    
+    // 创建时间轴项目
+    function createTimelineItem(date, items) {
+        const timelineItemDiv = document.createElement('div');
+        timelineItemDiv.className = 'timeline-item';
+        
+        const dateObj = new Date(date);
+        const weekday = dateObj.toLocaleDateString('zh-CN', { weekday: 'long' });
+        const formattedDate = dateObj.toLocaleDateString('zh-CN', { 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric' 
+        });
+        
+        timelineItemDiv.innerHTML = `
+            <div class="timeline-date">
+                <div class="timeline-date-text">${formattedDate}</div>
+                <div class="timeline-date-sub">${weekday} · ${items.length} 张截图</div>
+            </div>
+            <div class="timeline-content">
+                <div class="timeline-screenshots"></div>
+            </div>
+        `;
+        
+        const screenshotsContainer = timelineItemDiv.querySelector('.timeline-screenshots');
+        
+        // 设置网格大小属性
+        const currentGridSize = gridSizeSelect.value || '3';
+        screenshotsContainer.setAttribute('data-grid-size', currentGridSize);
+        
+        // 按时间倒序排列当天的截图
+        const sortedItems = items.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+        
+        sortedItems.forEach(item => {
+            const screenshotDiv = createTimelineScreenshot(item);
+            screenshotsContainer.appendChild(screenshotDiv);
+        });
+        
+        return timelineItemDiv;
+    }
+    
+    // 创建时间轴截图项目
+    function createTimelineScreenshot(item) {
+        const screenshotDiv = document.createElement('div');
+        screenshotDiv.className = 'timeline-screenshot';
+        
+        const title = item.title || item.filename || '未知标题';
+        const filename = item.filename || '未知文件';
+        const url = item.url || '未知URL';
+        const time = new Date(item.timestamp || Date.now()).toLocaleTimeString('zh-CN', {
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+        const type = item.type || 'unknown';
+        
+        screenshotDiv.innerHTML = `
+            <div class="item-header">
+                <div class="item-title" title="${filename}">📄 ${filename}</div>
+                <div class="item-type">${type === 'full' ? '📏 长截图' : type === 'area' ? '🔲 区域截图' : '📸 普通截图'}</div>
+            </div>
+            <div class="item-subtitle" title="${title}">${title}</div>
+            <div class="item-url" title="${url}">🌐 ${url}</div>
+            <div class="item-date">
+                <span>⏰ ${time}</span>
+            </div>
+            <div class="item-actions">
+                <button class="item-btn primary view-image-btn" data-filename="${filename}">🖼️ 图片</button>
+                <button class="item-btn details-btn">📋 详情</button>
+                <button class="item-btn edit-btn">✏️ 编辑</button>
+                <button class="item-btn delete-btn">🗑️ 删除</button>
+            </div>
+        `;
+        
+        // 添加事件监听器
+        addItemEventListeners(screenshotDiv, item);
+        
+        return screenshotDiv;
+    }
+    
+    // 为项目添加事件监听器
+    function addItemEventListeners(itemElement, item) {
+        // 点击查看详情按钮显示弹窗
+        const detailsBtn = itemElement.querySelector('.details-btn');
+        detailsBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            showItemDetails(item);
+        });
+        
+        // 点击查看图片按钮
+        const viewImageBtn = itemElement.querySelector('.view-image-btn');
+        viewImageBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            openImageFile(item);
+        });
+        
+        // 点击编辑按钮
+        const editBtn = itemElement.querySelector('.edit-btn');
+        editBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            showEditModal(item);
+        });
+        
+        // 点击删除按钮
+        const deleteBtn = itemElement.querySelector('.delete-btn');
+        deleteBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            showDeleteModal(item);
+        });
+        
+        // 点击URL跳转到对应网页
+        const urlElement = itemElement.querySelector('.item-url');
+        if (urlElement && item.url && item.url !== '未知URL') {
+            urlElement.style.cursor = 'pointer';
+            urlElement.addEventListener('click', (e) => {
+                e.stopPropagation();
+                chrome.tabs.create({ url: item.url });
+            });
+        }
     }
     
     // 创建历史项目元素
@@ -148,12 +325,8 @@ document.addEventListener('DOMContentLoaded', async function() {
             showEditModal(item);
         });
         
-        // 点击删除按钮
-        const deleteBtn = itemDiv.querySelector('.delete-btn');
-        deleteBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            showDeleteModal(item);
-        });
+        // 添加事件监听器
+        addItemEventListeners(itemDiv, item);
         
         return itemDiv;
     }
@@ -1059,6 +1232,13 @@ document.addEventListener('DOMContentLoaded', async function() {
         const size = parseInt(columns) || 3;
         const minWidth = size === 2 ? '450px' : size === 3 ? '360px' : size === 4 ? '280px' : '200px';
         historyContainer.style.gridTemplateColumns = `repeat(auto-fill, minmax(${minWidth}, 1fr))`;
+        
+        // 同时更新时间轴模式下的截图容器
+        const timelineScreenshots = document.querySelectorAll('.timeline-screenshots');
+        timelineScreenshots.forEach(container => {
+            container.setAttribute('data-grid-size', size);
+        });
+        
         chrome.storage.local.set({ gridSize: size });
     }
     
@@ -1079,9 +1259,33 @@ document.addEventListener('DOMContentLoaded', async function() {
         updateGridSize(this.value);
     });
     
+    // 切换视图模式
+    function switchViewMode(mode) {
+        currentViewMode = mode;
+        chrome.storage.local.set({ viewMode: mode });
+        
+        // 重新显示历史记录
+        displayHistory(currentHistory);
+    }
+    
+    // 初始化视图模式
+    function initViewMode() {
+        chrome.storage.local.get(['viewMode'], function(result) {
+            const savedMode = result.viewMode || 'grid';
+            currentViewMode = savedMode;
+            viewModeSelect.value = savedMode;
+        });
+    }
+    
+    // 视图模式选择事件
+    viewModeSelect.addEventListener('change', function() {
+        switchViewMode(this.value);
+    });
+    
     // 初始化主题和网格大小
     initTheme();
     initGridSize();
+    initViewMode();
     
     // 初始化赞赏码事件
     function initScrollListener() {

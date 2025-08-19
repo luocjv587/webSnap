@@ -473,6 +473,15 @@
             z-index: 1;
             transition: color 0.3s ease;
         }
+        
+        .item-url:hover {
+            color: rgba(0, 122, 255, 0.9);
+            text-decoration: underline;
+        }
+        
+        body.dark-mode .item-url:hover {
+            color: rgba(10, 132, 255, 1);
+        }
 
         .item-date {
             font-size: 12px;
@@ -717,7 +726,7 @@
                 gap: 10px;
             }
             
-            .mode-switch, .grid-options {
+            .mode-switch, .view-mode-options, .grid-options {
                 width: 100%;
             }
             
@@ -899,6 +908,187 @@
             animation: fadeIn 0.5s ease-out;
         }
 
+        /* 时间轴模式样式 */
+        .timeline-container {
+            display: none;
+            max-width: 1000px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        .timeline-container.active {
+            display: block;
+        }
+
+        .timeline-item {
+            display: flex;
+            margin-bottom: 40px;
+            position: relative;
+        }
+
+        .timeline-date {
+            width: 200px;
+            flex-shrink: 0;
+            padding-right: 30px;
+            text-align: right;
+            position: relative;
+        }
+
+        .timeline-date::after {
+            content: '';
+            position: absolute;
+            right: -6px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 12px;
+            height: 12px;
+            background: var(--focus-color);
+            border-radius: 50%;
+            box-shadow: 0 0 0 4px var(--card-bg), 0 0 0 6px var(--focus-color);
+        }
+
+        .timeline-date::before {
+            content: '';
+            position: absolute;
+            right: -1px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: var(--focus-color);
+            opacity: 0.3;
+        }
+
+        .timeline-date-text {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-color);
+            margin-bottom: 4px;
+        }
+
+        .timeline-date-sub {
+            font-size: 12px;
+            color: var(--text-color-secondary);
+        }
+
+        .timeline-content {
+            flex: 1;
+            padding-left: 30px;
+        }
+
+        .timeline-screenshots {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 16px;
+        }
+        
+        /* 时间轴模式下的网格大小响应 */
+        .timeline-screenshots[data-grid-size="2"] {
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+        }
+        
+        .timeline-screenshots[data-grid-size="3"] {
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        }
+        
+        .timeline-screenshots[data-grid-size="4"] {
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+        }
+        
+        .timeline-screenshots[data-grid-size="5"] {
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        }
+        
+        .timeline-screenshots[data-grid-size="6"] {
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+        }
+
+        .timeline-screenshot {
+            background: var(--card-bg);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 16px;
+            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            box-shadow: 0 2px 12px var(--shadow-color);
+        }
+
+        .timeline-screenshot:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px var(--shadow-color-hover);
+        }
+
+        .timeline-screenshot .item-header {
+            margin-bottom: 8px;
+        }
+
+        .timeline-screenshot .item-title {
+            font-size: 14px;
+            margin-bottom: 2px;
+        }
+
+        .timeline-screenshot .item-subtitle {
+            font-size: 12px;
+            margin-bottom: 4px;
+        }
+
+        .timeline-screenshot .item-url {
+            font-size: 11px;
+            margin-bottom: 8px;
+        }
+        
+        .timeline-screenshot .item-url:hover {
+            color: rgba(0, 122, 255, 0.9);
+            text-decoration: underline;
+        }
+        
+        body.dark-mode .timeline-screenshot .item-url:hover {
+            color: rgba(10, 132, 255, 1);
+        }
+
+        .timeline-screenshot .item-actions {
+            margin-top: 12px;
+            padding-top: 12px;
+            gap: 6px;
+        }
+
+        .timeline-screenshot .item-btn {
+            padding: 6px 10px;
+            font-size: 11px;
+        }
+
+        /* 响应式调整 */
+        @media (max-width: 768px) {
+            .timeline-item {
+                flex-direction: column;
+            }
+
+            .timeline-date {
+                width: 100%;
+                text-align: left;
+                padding-right: 0;
+                padding-bottom: 16px;
+                margin-bottom: 16px;
+                border-bottom: 1px solid var(--card-border);
+            }
+
+            .timeline-date::after {
+                display: none;
+            }
+
+            .timeline-date::before {
+                display: none;
+            }
+
+            .timeline-content {
+                padding-left: 0;
+            }
+
+            .timeline-screenshots {
+                grid-template-columns: 1fr;
+            }
+        }
+
         /* 底部图片样式 */
         .bottom-image-container {
             text-align: center;
@@ -938,6 +1128,12 @@
                         <span id="themeIcon">🌞</span>
                         <span id="themeText">日间模式</span>
                     </button>
+                </div>
+                <div class="view-mode-options">
+                    <select id="viewModeSelect" class="grid-select">
+                        <option value="grid" selected>平铺模式</option>
+                        <option value="timeline">时间轴模式</option>
+                    </select>
                 </div>
                 <div class="grid-options">
                     <select id="gridSizeSelect" class="grid-select">
@@ -981,6 +1177,10 @@
 
         <div id="historyContainer" class="history-grid" style="display: none;">
             <!-- 历史记录项目将在这里动态生成 -->
+        </div>
+
+        <div id="timelineContainer" class="timeline-container">
+            <!-- 时间轴模式的内容将在这里动态生成 -->
         </div>
 
         <!-- 赞赏提示 -->
