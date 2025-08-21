@@ -2290,6 +2290,81 @@ async function handleNotionApiRequest(request) {
   }
 }
 
+// 压缩图片到指定大小以下（适用于 service worker 环境）
+async function compressImage(base64Data, contentType, maxSize) {
+  try {
+    // 将 base64 转换为 ImageData
+    const base64Content = base64Data.replace(/^data:[^;]+;base64,/, '');
+    const byteCharacters = atob(base64Content);
+    const byteNumbers = new Array(byteCharacters.length);
+    for (let i = 0; i < byteCharacters.length; i++) {
+      byteNumbers[i] = byteCharacters.charCodeAt(i);
+    }
+    const byteArray = new Uint8Array(byteNumbers);
+    const originalBlob = new Blob([byteArray], { type: contentType });
+    
+    // 如果原始文件已经小于等于最大大小，直接返回
+    if (originalBlob.size <= maxSize) {
+      return originalBlob;
+    }
+    
+    // 使用 OffscreenCanvas 进行压缩
+    const imageBitmap = await createImageBitmap(originalBlob);
+    const { width, height } = imageBitmap;
+    
+    // 计算压缩比例
+    let scaleFactor = Math.sqrt(maxSize / originalBlob.size * 0.8); // 预留一些空间
+    let newWidth = Math.floor(width * scaleFactor);
+    let newHeight = Math.floor(height * scaleFactor);
+    
+    // 创建 OffscreenCanvas
+    const canvas = new OffscreenCanvas(newWidth, newHeight);
+    const ctx = canvas.getContext('2d');
+    
+    // 绘制压缩后的图片
+    ctx.drawImage(imageBitmap, 0, 0, newWidth, newHeight);
+    
+    // 二分法查找合适的压缩质量
+    let quality = 0.9;
+    let minQuality = 0.1;
+    let maxQuality = 0.9;
+    
+    while (maxQuality - minQuality > 0.01) {
+      const blob = await canvas.convertToBlob({ type: contentType, quality });
+      
+      if (blob.size <= maxSize) {
+        // 文件大小合适，可以尝试提高质量
+        minQuality = quality;
+        quality = (minQuality + maxQuality) / 2;
+        
+        // 如果已经很接近最大质量，返回当前结果
+        if (maxQuality - quality < 0.05) {
+          return blob;
+        }
+      } else {
+        // 文件还是太大，降低质量
+        maxQuality = quality;
+        quality = (minQuality + maxQuality) / 2;
+      }
+    }
+    
+    // 返回最终压缩结果
+    return await canvas.convertToBlob({ type: contentType, quality });
+    
+  } catch (error) {
+    console.error('图片压缩失败:', error);
+    // 如果压缩失败，返回原始数据的简单压缩版本
+    const base64Content = base64Data.replace(/^data:[^;]+;base64,/, '');
+    const byteCharacters = atob(base64Content);
+    const byteNumbers = new Array(byteCharacters.length);
+    for (let i = 0; i < byteCharacters.length; i++) {
+      byteNumbers[i] = byteCharacters.charCodeAt(i);
+    }
+    const byteArray = new Uint8Array(byteNumbers);
+    return new Blob([byteArray], { type: contentType });
+  }
+}
+
 // 将 base64 图片上传到 Notion
 async function uploadImageToNotion(base64Data, notionToken) {
   try {
@@ -2303,7 +2378,15 @@ async function uploadImageToNotion(base64Data, notionToken) {
       byteNumbers[i] = byteCharacters.charCodeAt(i);
     }
     const byteArray = new Uint8Array(byteNumbers);
-    const blob = new Blob([byteArray], { type: 'image/png' });
+    let blob = new Blob([byteArray], { type: 'image/png' });
+    
+    // 检查文件大小，如果大于 5MB，则进行压缩
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (blob.size > maxSize) {
+      console.log(`缩略图大小 ${(blob.size / 1024 / 1024).toFixed(2)}MB 超过 5MB 限制，开始压缩...`);
+      blob = await compressImage(base64Data, 'image/png', maxSize);
+      console.log(`压缩后缩略图大小: ${(blob.size / 1024 / 1024).toFixed(2)}MB`);
+    }
     
     // 步骤1: 创建文件上传对象
     const createUploadResponse = await fetch('https://api.notion.com/v1/file_uploads', {
@@ -2401,7 +2484,15 @@ async function uploadFileToNotion(filePath, notionToken) {
       byteNumbers[i] = byteCharacters.charCodeAt(i);
     }
     const byteArray = new Uint8Array(byteNumbers);
-    const blob = new Blob([byteArray], { type: contentType });
+    let blob = new Blob([byteArray], { type: contentType });
+    
+    // 检查文件大小，如果大于 5MB 且是图片，则进行压缩
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (blob.size > maxSize && contentType.startsWith('image/')) {
+      console.log(`文件大小 ${(blob.size / 1024 / 1024).toFixed(2)}MB 超过 5MB 限制，开始压缩...`);
+      blob = await compressImage(fileContent, contentType, maxSize);
+      console.log(`压缩后文件大小: ${(blob.size / 1024 / 1024).toFixed(2)}MB`);
+    }
     
     // 步骤1: 创建文件上传对象
     const createUploadResponse = await fetch('https://api.notion.com/v1/file_uploads', {
