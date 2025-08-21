@@ -50,6 +50,45 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
         sendResponse({ success: true, filename: result.filename });
       })
       .catch(error => {
+        console.error('截图失败:', error);
+        sendResponse({ success: false, error: error.message });
+      });
+    return true; // 保持消息通道开放
+  }
+  
+  // 处理 Notion API 请求
+  if (request.action === 'notionApiRequest') {
+    handleNotionApiRequest(request)
+      .then(result => {
+        sendResponse({ success: true, data: result });
+      })
+      .catch(error => {
+        console.error('Notion API 请求失败:', error);
+        sendResponse({ success: false, error: error.message });
+      });
+    return true; // 保持消息通道开放
+  }
+  
+  // 处理图片上传到 Notion
+  if (request.action === 'uploadImageToNotion') {
+    uploadImageToNotion(request.base64Data, request.notionToken)
+      .then(result => {
+        sendResponse({ success: true, data: result });
+      })
+      .catch(error => {
+        console.error('图片上传失败:', error);
+        sendResponse({ success: false, error: error.message });
+      });
+    return true; // 保持消息通道开放
+  }
+  
+  if (request.action === 'uploadFileToNotion') {
+    uploadFileToNotion(request.filePath, request.notionToken)
+      .then(result => {
+        sendResponse({ success: true, data: result });
+      })
+      .catch(error => {
+        console.error('文件上传失败:', error);
         sendResponse({ success: false, error: error.message });
       });
     return true; // 保持消息通道开放
@@ -1662,10 +1701,307 @@ async function captureAreaScreenshot(url, title) {
     };
     
   } catch (error) {
-     console.error('区域截图失败:', error);
-     throw error;
-   }
- }
+        console.error('文件上传失败:', error);
+        throw error;
+    }
+}
+
+// 自动同步定时器
+let autoSyncTimer = null;
+
+// 启动自动同步
+function startAutoSync() {
+    // 清除现有定时器
+    if (autoSyncTimer) {
+        clearInterval(autoSyncTimer);
+    }
+    
+    // 每隔1分钟检查一次
+    autoSyncTimer = setInterval(async () => {
+        try {
+            await checkAndSyncPendingItems();
+        } catch (error) {
+            console.error('自动同步失败:', error);
+        }
+    }, 60000); // 60秒 = 1分钟
+    
+    console.log('自动同步已启动，每隔1分钟检查一次');
+}
+
+// 停止自动同步
+function stopAutoSync() {
+    if (autoSyncTimer) {
+        clearInterval(autoSyncTimer);
+        autoSyncTimer = null;
+        console.log('自动同步已停止');
+    }
+}
+
+// 检查并同步待同步的项目
+async function checkAndSyncPendingItems() {
+    try {
+        // 获取 Notion 配置
+        const result = await chrome.storage.local.get(['notionConfig']);
+        const notionConfig = result.notionConfig;
+        
+        // 如果没有配置 Notion，则不进行同步
+        if (!notionConfig || !notionConfig.apiKey || !notionConfig.databaseId) {
+            return;
+        }
+        
+        // 获取历史记录
+        const historyResult = await chrome.storage.local.get(['webSnapHistory']);
+        const history = historyResult.webSnapHistory || [];
+        
+        // 获取同步状态记录
+        const syncStatusResult = await chrome.storage.local.get(['notionSyncStatus']);
+        const syncStatus = syncStatusResult.notionSyncStatus || {};
+        
+        // 找出未同步的项目
+        const pendingItems = history.filter(item => {
+            const itemKey = `${item.timestamp}_${item.filename}`;
+            return !syncStatus[itemKey] || syncStatus[itemKey].status !== 'synced';
+        });
+        
+        if (pendingItems.length === 0) {
+            return; // 没有待同步的项目
+        }
+        
+        console.log(`发现 ${pendingItems.length} 个待同步项目，开始自动同步...`);
+        
+        // 逐个同步
+        for (const item of pendingItems) {
+            try {
+                const itemKey = `${item.timestamp}_${item.filename}`;
+                
+                // 更新同步状态为同步中
+                syncStatus[itemKey] = {
+                    status: 'syncing',
+                    timestamp: Date.now()
+                };
+                await chrome.storage.local.set({ notionSyncStatus: syncStatus });
+                
+                // 执行同步
+                await syncItemToNotion(item, notionConfig);
+                
+                // 更新同步状态为已同步
+                syncStatus[itemKey] = {
+                    status: 'synced',
+                    timestamp: Date.now()
+                };
+                await chrome.storage.local.set({ notionSyncStatus: syncStatus });
+                
+                console.log(`项目 ${item.filename} 同步成功`);
+                
+            } catch (error) {
+                console.error(`项目 ${item.filename} 同步失败:`, error);
+                
+                // 更新同步状态为失败
+                const itemKey = `${item.timestamp}_${item.filename}`;
+                syncStatus[itemKey] = {
+                    status: 'failed',
+                    timestamp: Date.now(),
+                    error: error.message
+                };
+                await chrome.storage.local.set({ notionSyncStatus: syncStatus });
+            }
+        }
+        
+    } catch (error) {
+        console.error('检查待同步项目失败:', error);
+    }
+}
+
+// 同步单个项目到 Notion
+async function syncItemToNotion(historyItem, notionConfig) {
+    const pageData = {
+        parent: {
+            database_id: notionConfig.databaseId
+        },
+        properties: {
+            'Title': {
+                title: [{
+                    text: {
+                        content: historyItem.title || '未命名截图'
+                    }
+                }]
+            },
+            'URL': {
+                url: historyItem.url || null
+            },
+            'Filename': {
+                rich_text: [{
+                    text: {
+                        content: historyItem.filename || ''
+                    }
+                }]
+            },
+            'Type': {
+                select: {
+                    name: getScreenshotTypeText(historyItem.type)
+                }
+            },
+            'Created': {
+                date: {
+                    start: new Date(historyItem.timestamp).toISOString()
+                }
+            },
+            'Thumbnail': {
+                files: await getThumbnailFileForSync(historyItem.thumbnail, notionConfig.apiKey)
+            },
+            'FilePath': {
+                rich_text: [{
+                    text: {
+                        content: await getFilePathForItemSync(historyItem) || ''
+                    }
+                }]
+            },
+            'FilepathReal': {
+                files: await getFilepathRealFileForSync(historyItem, notionConfig.apiKey)
+            }
+        }
+    };
+    
+    const response = await handleNotionApiRequest({
+        method: 'POST',
+        url: 'https://api.notion.com/v1/pages',
+        headers: {
+            'Authorization': `Bearer ${notionConfig.apiKey}`,
+            'Notion-Version': '2022-06-28',
+            'Content-Type': 'application/json'
+        },
+        body: pageData
+    });
+    
+    if (!response.success) {
+        throw new Error(`Notion API 错误: ${response.error || '未知错误'}`);
+    }
+    
+    return response.data;
+}
+
+// 获取截图类型文本（用于同步）
+function getScreenshotTypeText(type) {
+    switch (type) {
+        case 'normal': return '普通截图';
+        case 'full': return '长截图';
+        case 'area': return '区域截图';
+        default: return '未知类型';
+    }
+}
+
+// 获取缩略图文件（用于同步）
+async function getThumbnailFileForSync(thumbnailBase64, notionToken) {
+    try {
+        if (!thumbnailBase64 || !notionToken) {
+            return [];
+        }
+        
+        const uploadResult = await uploadImageToNotion(thumbnailBase64, notionToken);
+        
+        if (uploadResult && uploadResult.file_upload) {
+            return [{
+                name: 'thumbnail.png',
+                type: 'file_upload',
+                file_upload: {
+                    id: uploadResult.file_upload.id
+                }
+            }];
+        }
+        
+        return [];
+    } catch (error) {
+        console.error('获取缩略图文件失败:', error);
+        return [];
+    }
+}
+
+// 获取文件路径（用于同步）
+async function getFilePathForItemSync(historyItem) {
+    try {
+        const downloadPath = await getDownloadPath();
+        const pathSeparator = navigator.platform.includes('Win') ? '\\' : '/';
+        const fullPath = `${downloadPath}${pathSeparator}webSnap${pathSeparator}${historyItem.filename}`;
+        const fileUrl = `file://${fullPath.replace(/\\/g, '/')}`;
+        return fileUrl;
+    } catch (error) {
+        console.error('获取文件路径失败:', error);
+        return '';
+    }
+}
+
+// 获取实际文件（用于同步）
+async function getFilepathRealFileForSync(historyItem, notionToken) {
+    try {
+        if (!historyItem.filename || !notionToken) {
+            return [];
+        }
+        
+        const downloadPath = await getDownloadPath();
+        const pathSeparator = navigator.platform.includes('Win') ? '\\' : '/';
+        const fullPath = `${downloadPath}${pathSeparator}webSnap${pathSeparator}${historyItem.filename}`;
+        
+        const uploadResult = await uploadFileToNotion(fullPath, notionToken);
+        
+        if (uploadResult && uploadResult.file_upload) {
+            return [{
+                name: historyItem.filename,
+                type: 'file_upload',
+                file_upload: {
+                    id: uploadResult.file_upload.id
+                }
+            }];
+        }
+        
+        return [];
+    } catch (error) {
+        console.error('获取实际文件失败:', error);
+        return [];
+    }
+}
+
+// 监听存储变化（已禁用自动同步）
+// chrome.storage.onChanged.addListener((changes, namespace) => {
+//     if (namespace === 'local' && changes.notionConfig) {
+//         const newConfig = changes.notionConfig.newValue;
+//         
+//         if (newConfig && newConfig.apiKey && newConfig.databaseId) {
+//             // 配置完整，启动自动同步
+//             startAutoSync();
+//         } else {
+//             // 配置不完整，停止自动同步
+//             stopAutoSync();
+//         }
+//     }
+// });
+
+// 扩展启动时检查（已禁用自动同步）
+// chrome.runtime.onStartup.addListener(async () => {
+//     try {
+//         const result = await chrome.storage.local.get(['notionConfig']);
+//         const notionConfig = result.notionConfig;
+//         
+//         if (notionConfig && notionConfig.apiKey && notionConfig.databaseId) {
+//             startAutoSync();
+//         }
+//     } catch (error) {
+//         console.error('启动时检查自动同步配置失败:', error);
+//     }
+// });
+
+// 扩展安装时检查（已禁用自动同步）
+// chrome.runtime.onInstalled.addListener(async () => {
+//     try {
+//         const result = await chrome.storage.local.get(['notionConfig']);
+//         const notionConfig = result.notionConfig;
+//         
+//         if (notionConfig && notionConfig.apiKey && notionConfig.databaseId) {
+//             startAutoSync();
+//         }
+//     } catch (error) {
+//         console.error('安装时检查自动同步配置失败:', error);
+//     }
+// });
 
 // 在background script中保存历史记录
 async function saveToHistoryInBackground(url, title, type, captureResult = null) {
@@ -1929,4 +2265,193 @@ function cropImageInContent(imageDataUrl, area) {
       resolve(null);
     };
   });
+}
+
+// 处理 Notion API 请求
+async function handleNotionApiRequest(request) {
+  const { method, url, headers, body } = request;
+  
+  try {
+    const response = await fetch(url, {
+      method: method,
+      headers: headers,
+      body: body ? JSON.stringify(body) : undefined
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Notion API 请求失败:', error);
+    throw error;
+  }
+}
+
+// 将 base64 图片上传到 Notion
+async function uploadImageToNotion(base64Data, notionToken) {
+  try {
+    // 移除 base64 前缀
+    const base64Content = base64Data.replace(/^data:image\/[a-z]+;base64,/, '');
+    
+    // 将 base64 转换为 Blob
+    const byteCharacters = atob(base64Content);
+    const byteNumbers = new Array(byteCharacters.length);
+    for (let i = 0; i < byteCharacters.length; i++) {
+      byteNumbers[i] = byteCharacters.charCodeAt(i);
+    }
+    const byteArray = new Uint8Array(byteNumbers);
+    const blob = new Blob([byteArray], { type: 'image/png' });
+    
+    // 步骤1: 创建文件上传对象
+    const createUploadResponse = await fetch('https://api.notion.com/v1/file_uploads', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${notionToken}`,
+        'Content-Type': 'application/json',
+        'Notion-Version': '2022-06-28'
+      },
+      body: JSON.stringify({
+        filename: 'thumbnail.png',
+        content_type: 'image/png'
+      })
+    });
+    
+    if (!createUploadResponse.ok) {
+      const errorText = await createUploadResponse.text();
+      throw new Error(`创建文件上传对象失败: ${createUploadResponse.status} - ${errorText}`);
+    }
+    
+    const uploadObject = await createUploadResponse.json();
+    const { id: fileUploadId, upload_url } = uploadObject;
+    
+    // 步骤2: 使用 upload_url 上传文件内容
+    const formData = new FormData();
+    formData.append('file', blob, 'thumbnail.png');
+    
+    const sendUploadResponse = await fetch(upload_url, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${notionToken}`,
+        'Notion-Version': '2022-06-28'
+      },
+      body: formData
+    });
+    
+    if (!sendUploadResponse.ok) {
+      const errorText = await sendUploadResponse.text();
+      throw new Error(`文件内容上传失败: ${sendUploadResponse.status} - ${errorText}`);
+    }
+    
+    // 返回文件上传 ID，用于在 Notion 中引用
+    return {
+      type: 'file_upload',
+      file_upload: {
+        id: fileUploadId
+      }
+    };
+  } catch (error) {
+    console.error('图片上传到 Notion 失败:', error);
+    throw error;
+  }
+}
+
+// 读取本地文件并上传到 Notion
+async function uploadFileToNotion(filePath, notionToken) {
+  try {
+    // 读取文件内容
+    const fileContent = await readFileContent(filePath);
+    if (!fileContent) {
+      throw new Error('无法读取文件内容');
+    }
+    
+    // 从文件路径中提取文件名
+    const fileName = filePath.split('/').pop() || 'unknown_file';
+    
+    // 根据文件扩展名确定 MIME 类型
+    const extension = fileName.split('.').pop()?.toLowerCase();
+    let contentType = 'application/octet-stream'; // 默认类型
+    
+    const mimeTypes = {
+      'png': 'image/png',
+      'jpg': 'image/jpeg',
+      'jpeg': 'image/jpeg',
+      'gif': 'image/gif',
+      'webp': 'image/webp',
+      'svg': 'image/svg+xml',
+      'pdf': 'application/pdf',
+      'txt': 'text/plain',
+      'json': 'application/json',
+      'html': 'text/html',
+      'css': 'text/css',
+      'js': 'text/javascript'
+    };
+    
+    if (extension && mimeTypes[extension]) {
+      contentType = mimeTypes[extension];
+    }
+    
+    // 将 base64 转换为 Blob
+    const base64Content = fileContent.replace(/^data:[^;]+;base64,/, '');
+    const byteCharacters = atob(base64Content);
+    const byteNumbers = new Array(byteCharacters.length);
+    for (let i = 0; i < byteCharacters.length; i++) {
+      byteNumbers[i] = byteCharacters.charCodeAt(i);
+    }
+    const byteArray = new Uint8Array(byteNumbers);
+    const blob = new Blob([byteArray], { type: contentType });
+    
+    // 步骤1: 创建文件上传对象
+    const createUploadResponse = await fetch('https://api.notion.com/v1/file_uploads', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${notionToken}`,
+        'Content-Type': 'application/json',
+        'Notion-Version': '2022-06-28'
+      },
+      body: JSON.stringify({
+        filename: fileName,
+        content_type: contentType
+      })
+    });
+    
+    if (!createUploadResponse.ok) {
+      const errorText = await createUploadResponse.text();
+      throw new Error(`创建文件上传对象失败: ${createUploadResponse.status} - ${errorText}`);
+    }
+    
+    const uploadObject = await createUploadResponse.json();
+    const { id: fileUploadId, upload_url } = uploadObject;
+    
+    // 步骤2: 使用 upload_url 上传文件内容
+    const formData = new FormData();
+    formData.append('file', blob, fileName);
+    
+    const sendUploadResponse = await fetch(upload_url, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${notionToken}`,
+        'Notion-Version': '2022-06-28'
+      },
+      body: formData
+    });
+    
+    if (!sendUploadResponse.ok) {
+      const errorText = await sendUploadResponse.text();
+      throw new Error(`文件内容上传失败: ${sendUploadResponse.status} - ${errorText}`);
+    }
+    
+    // 返回文件上传 ID，用于在 Notion 中引用
+    return {
+      type: 'file_upload',
+      file_upload: {
+        id: fileUploadId
+      }
+    };
+  } catch (error) {
+    console.error('文件上传到 Notion 失败:', error);
+    throw error;
+  }
 }

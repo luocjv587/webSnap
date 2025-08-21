@@ -194,6 +194,225 @@
             transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
         }
 
+        .sync-indicator {
+            background: rgba(0, 122, 255, 0.1);
+            border: 1px solid rgba(0, 122, 255, 0.2);
+            border-radius: 12px;
+            padding: 8px 16px;
+            transition: all 0.3s ease;
+        }
+
+        body.dark-mode .sync-indicator {
+            background: rgba(10, 132, 255, 0.15);
+            border: 1px solid rgba(10, 132, 255, 0.3);
+        }
+
+        .sync-indicator-content {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .sync-indicator-icon {
+            font-size: 14px;
+            animation: spin 2s linear infinite;
+        }
+
+        .sync-indicator-text {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-color);
+            transition: color 0.3s ease;
+        }
+
+        .sync-indicator.synced {
+            background: rgba(52, 199, 89, 0.1);
+            border-color: rgba(52, 199, 89, 0.2);
+        }
+
+        body.dark-mode .sync-indicator.synced {
+            background: rgba(48, 209, 88, 0.15);
+            border-color: rgba(48, 209, 88, 0.3);
+        }
+
+        .sync-indicator.synced .sync-indicator-icon {
+            animation: none;
+        }
+
+        @keyframes spin {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .notion-config-btn {
+            margin-right: 12px;
+            background: var(--bg-color);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .notion-config-btn:hover {
+            background: var(--hover-bg-color);
+            border-color: var(--primary-color);
+        }
+
+        .notion-config {
+            background: var(--card-bg);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 20px var(--shadow-color);
+            transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .notion-config h3 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: var(--text-color);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .notion-form {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .notion-form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .notion-form-group label {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-color);
+        }
+
+        .notion-input {
+            width: 100%;
+            padding: 10px 16px;
+            border: 1px solid var(--input-border);
+            border-radius: 12px;
+            background: var(--input-bg);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            color: var(--input-color);
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94), background 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+            box-shadow: 0 2px 8px var(--shadow-color);
+        }
+
+        .notion-input::placeholder {
+            color: var(--text-color-secondary);
+            opacity: 0.7;
+            font-weight: 400;
+        }
+
+        .notion-input:hover {
+            background: var(--input-bg);
+            filter: brightness(1.05);
+            border-color: var(--input-border);
+            box-shadow: 0 4px 16px var(--shadow-color-hover);
+        }
+
+        .notion-input:focus {
+            outline: none;
+            border-color: var(--focus-color);
+            background: var(--input-bg);
+            filter: brightness(1.1);
+            box-shadow: 0 0 0 3px var(--focus-shadow);
+            transform: translateY(-1px);
+        }
+
+        .notion-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .notion-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .notion-status.idle {
+            color: var(--text-color-secondary);
+        }
+
+        .notion-status.syncing {
+            color: #007AFF;
+        }
+
+        .notion-status.success {
+            color: #34C759;
+        }
+
+        .notion-status.error {
+            color: var(--danger-color);
+        }
+
+        .notion-progress {
+            width: 200px;
+            height: 4px;
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 2px;
+            overflow: hidden;
+            margin-left: 8px;
+        }
+
+        .notion-progress-bar {
+            height: 100%;
+            background: #007AFF;
+            border-radius: 2px;
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+
+        .btn.notion-save {
+            background: rgba(0, 122, 255, 0.15);
+            color: rgba(0, 122, 255, 0.9);
+            border-color: rgba(0, 122, 255, 0.3);
+        }
+
+        .btn.notion-save:hover {
+            background: rgba(0, 122, 255, 0.2);
+            filter: brightness(1.1);
+            border-color: rgba(0, 122, 255, 0.4);
+        }
+
+        @media (max-width: 768px) {
+            .notion-form {
+                grid-template-columns: 1fr;
+            }
+        }
+
         .stats {
             font-size: 14px;
             color: var(--text-color-secondary);
@@ -417,6 +636,8 @@
             margin-bottom: 12px;
             position: relative;
             z-index: 1;
+            flex-wrap: wrap;
+            gap: 8px;
         }
 
         .item-title {
@@ -448,6 +669,48 @@
         body.dark-mode .item-type {
             background: rgba(10, 132, 255, 0.2);
             color: rgba(10, 132, 255, 1);
+        }
+
+        .sync-status {
+            font-size: 12px;
+            color: var(--text-color-secondary);
+            position: relative;
+            z-index: 1;
+            transition: color 0.3s ease;
+        }
+
+        .sync-status-synced {
+            color: rgba(52, 199, 89, 0.9);
+        }
+
+        body.dark-mode .sync-status-synced {
+            color: rgba(48, 209, 88, 1);
+        }
+
+        .sync-status-syncing {
+            color: rgba(255, 149, 0, 0.9);
+            animation: pulse 2s infinite;
+        }
+
+        body.dark-mode .sync-status-syncing {
+            color: rgba(255, 159, 10, 1);
+        }
+
+        .sync-status-pending {
+            color: rgba(142, 142, 147, 0.9);
+        }
+
+        body.dark-mode .sync-status-pending {
+            color: rgba(152, 152, 157, 1);
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.6;
+            }
         }
 
         .item-subtitle {
@@ -1162,6 +1425,10 @@
                 <div class="subtitle">管理和查看您的所有截图记录</div>
             </div>
             <div class="header-right">
+                <button id="notionConfigBtn" class="btn notion-config-btn">
+                    <span>⚙️</span>
+                    <span>Notion</span>
+                </button>
                 <div class="mode-switch">
                     <button id="themeToggle" class="btn theme-btn">
                         <span id="themeIcon">🌞</span>
@@ -1189,6 +1456,12 @@
             <div class="stats" id="statsText">
                 正在加载...
             </div>
+            <div class="sync-indicator" id="syncIndicator" style="display: none;">
+                <div class="sync-indicator-content">
+                    <span class="sync-indicator-icon">🔄</span>
+                    <span class="sync-indicator-text" id="syncIndicatorText">检查同步状态...</span>
+                </div>
+            </div>
             <div class="actions">
                 <input type="text" class="search-box" id="searchBox" placeholder="🔍 搜索标题、文件名、网址或时间（如：今天、2024、01-15）...">
                 <button class="btn" id="refreshBtn">
@@ -1209,6 +1482,9 @@
                 </button>
             </div>
         </div>
+
+        <!-- Notion 同步配置区域 -->
+
 
         <div id="loadingDiv" class="loading">
             正在加载历史记录...
@@ -1362,6 +1638,67 @@
                     <span>确认删除</span>
                 </button>
                 <button class="btn" id="cancelDeleteBtn">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notion 配置弹窗 -->
+    <div id="notionConfigModal" class="modal" style="display: none;">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3>🔗 Notion 同步配置</h3>
+                <span class="close-btn" id="closeNotionConfigModal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div style="margin-bottom: 16px; padding: 12px; background: rgba(0, 122, 255, 0.1); border: 1px solid rgba(0, 122, 255, 0.2); border-radius: 8px; font-size: 13px; color: var(--text-color-secondary);">
+                    <strong>📝 使用说明：</strong><br>
+                    1. 在 Notion 中创建一个数据库，包含以下属性（属性名称必须完全一致）：<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;• <strong>Title</strong> (标题类型)<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;• <strong>URL</strong> (网址类型)<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;• <strong>Filename</strong> (文本类型)<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;• <strong>Type</strong> (选择类型，选项：普通截图、长截图、区域截图)<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;• <strong>Created</strong> (日期类型)<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;• <strong>Thumbnail</strong> (文件类型，存储缩略图文件)<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;• <strong>FilePath</strong> (文本类型，存储 file:// 文件路径)<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;• <strong>FilepathReal</strong> (文件类型，存储实际截图文件)<br>
+                    2. 获取 Notion API 密钥：访问 <a href="https://www.notion.so/my-integrations" target="_blank" style="color: #007AFF;">https://www.notion.so/my-integrations</a><br>
+                    3. 获取数据库 ID：从数据库页面 URL 中复制 32 位字符串<br>
+                    4. 保存配置后可点击"立即同步"按钮手动同步历史记录
+                </div>
+                <div class="notion-form">
+                    <div class="notion-form-group">
+                        <label for="notionApiKey">API 密钥</label>
+                        <input type="password" id="notionApiKey" class="notion-input" placeholder="输入 Notion API 密钥...">
+                    </div>
+                    <div class="notion-form-group">
+                        <label for="notionDatabaseId">数据库 ID</label>
+                        <input type="text" id="notionDatabaseId" class="notion-input" placeholder="输入 Notion 数据库 ID...">
+                    </div>
+                </div>
+                <div class="notion-actions">
+                    <div class="notion-status idle" id="notionStatus">
+                        <span id="notionStatusIcon">⏸️</span>
+                        <span id="notionStatusText">未配置</span>
+                        <div class="notion-progress" id="notionProgress" style="display: none;">
+                            <div class="notion-progress-bar" id="notionProgressBar"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn notion-save" id="saveNotionConfigBtn">
+                    <span>💾</span>
+                    <span>保存配置</span>
+                </button>
+                <button class="btn" id="syncToNotionBtn" disabled>
+                    <span>🔄</span>
+                    <span>立即同步</span>
+                </button>
+                <button class="btn danger" id="clearNotionConfigBtn">
+                    <span>🗑️</span>
+                    <span>清空配置</span>
+                </button>
+                <button class="btn" id="cancelNotionConfigBtn">取消</button>
             </div>
         </div>
     </div>

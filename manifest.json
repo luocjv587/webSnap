@@ -11,7 +11,8 @@
     "scripting"
   ],
   "host_permissions": [
-    "file://*"
+    "file://*",
+    "https://api.notion.com/*"
   ],
   "action": {
     "default_popup": "popup.html",
