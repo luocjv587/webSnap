@@ -136,6 +136,32 @@
       transform: none;
     }
     
+    .btn-group {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 6px;
+      margin-top: 12px;
+    }
+    
+    .btn-half {
+      flex: 1;
+      margin-bottom: 0;
+    }
+    
+    .btn-half .btn-content {
+      justify-content: center;
+    }
+    
+    .btn-half .btn-content span:first-child {
+      margin-right: 4px;
+    }
+    
+    #sidebarToggle.active {
+      background: rgba(0, 122, 255, 0.15);
+      border-color: rgba(0, 122, 255, 0.3);
+      color: rgba(0, 122, 255, 0.9);
+    }
+    
     .status {
       margin-top: 8px;
       padding: 8px 10px;
@@ -208,13 +234,20 @@
       </div>
       <span class="shortcut">⇧+⌘+9</span>
     </button>
-    <button id="historyBtn" class="btn">
-      <div class="btn-content">
-        <span>📋</span>
-        <span>历史记录</span>
-      </div>
-      <span class="shortcut">⇧+⌘+0</span>
-    </button>
+    <div class="btn-group">
+      <button id="historyBtn" class="btn btn-half">
+        <div class="btn-content">
+          <span>📋</span>
+          <span>管理</span>
+        </div>
+      </button>
+      <button id="sidebarToggle" class="btn btn-half">
+        <div class="btn-content">
+          <span>📌</span>
+          <span>侧边栏</span>
+        </div>
+      </button>
+    </div>
     <div id="status" class="status"></div>
   </div>
   <script src="popup.js"></script>

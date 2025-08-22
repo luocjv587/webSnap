@@ -180,6 +180,22 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
       });
     return true; // 保持消息通道开放
   }
+  
+  // 处理获取历史记录请求
+  if (request.action === 'getHistory') {
+    chrome.storage.local.get(['screenshotHistory'])
+      .then(result => {
+        const history = result.screenshotHistory || [];
+        sendResponse({ success: true, history: history });
+      })
+      .catch(error => {
+        console.error('获取历史记录失败:', error);
+        sendResponse({ success: false, error: error.message });
+      });
+    return true;
+  }
+  
+
 });
 
 // 截图并保存

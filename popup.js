@@ -7,11 +7,13 @@ document.addEventListener('DOMContentLoaded', function() {
   const fullCaptureBtn = document.getElementById('fullCaptureBtn');
   const areaCaptureBtn = document.getElementById('areaCaptureBtn');
   const historyBtn = document.getElementById('historyBtn');
+  const sidebarToggle = document.getElementById('sidebarToggle');
   const statusDiv = document.getElementById('status');
 
   console.log('DOM元素获取完成:', {
     captureBtn: !!captureBtn,
-    historyBtn: !!historyBtn
+    historyBtn: !!historyBtn,
+    sidebarToggle: !!sidebarToggle
   });
 
   let isCapturing = false;
@@ -121,19 +123,28 @@ document.addEventListener('DOMContentLoaded', function() {
         action: 'captureAndSave',
         url: tab.url,
         title: tab.title
-      }, function(response) {
+      }, async function(response) {
         if (response && response.success) {
           updateStatus('✅ 截图已保存！', 'success');
           console.log('普通截图完成，历史记录已由background script保存');
+          
+          // 刷新侧边栏
+          await refreshSidebar();
+          
+          // 延迟关闭弹窗，确保刷新完成
+          setTimeout(() => {
+            window.close();
+          }, 100);
         } else {
           const errorMsg = response ? response.error : '操作失败';
           updateStatus('❌ 操作失败: ' + errorMsg, 'error');
+          // 失败时也关闭弹窗
+          setTimeout(() => {
+            window.close();
+          }, 1000);
         }
         captureBtn.disabled = false;
       });
-      
-      // 自动关闭弹窗
-      window.close();
     } catch (error) {
       updateStatus('❌ 操作失败: ' + error.message, 'error');
       captureBtn.disabled = false;
@@ -156,12 +167,15 @@ document.addEventListener('DOMContentLoaded', function() {
         action: 'captureFullPage',
         url: tab.url,
         title: tab.title
-      }, function(response) {
+      }, async function(response) {
         isCapturing = false;
         
         if (response && response.success) {
           updateStatus('✅ ' + response.filename, 'success');
           console.log('长截图完成，历史记录已由background script保存');
+          
+          // 刷新侧边栏
+          await refreshSidebar();
         } else {
           const errorMsg = response ? response.error : '操作失败';
           updateStatus('❌ 长截图失败: ' + errorMsg, 'error');
@@ -193,21 +207,30 @@ document.addEventListener('DOMContentLoaded', function() {
         action: 'captureArea',
         url: tab.url,
         title: tab.title
-      }, function(response) {
+      }, async function(response) {
         if (response && response.success) {
           updateStatus('✅ 区域截图已保存！', 'success');
           console.log('区域截图完成，历史记录已由background script保存');
+          
+          // 刷新侧边栏
+          await refreshSidebar();
+          
+          // 延迟关闭弹窗，确保刷新完成
+          setTimeout(() => {
+            window.close();
+          }, 100);
         } else {
           const errorMsg = response ? response.error : '操作失败';
           updateStatus('❌ 区域截图失败: ' + errorMsg, 'error');
+          // 失败时也关闭弹窗
+          setTimeout(() => {
+            window.close();
+          }, 1000);
         }
         areaCaptureBtn.disabled = false;
         captureBtn.disabled = false;
         fullCaptureBtn.disabled = false;
       });
-      
-      // 自动关闭弹窗
-      window.close();
     } catch (error) {
       updateStatus('❌ 区域截图失败: ' + error.message, 'error');
       areaCaptureBtn.disabled = false;
@@ -247,6 +270,142 @@ document.addEventListener('DOMContentLoaded', function() {
       });
     }
   });
+
+  // 初始化侧边栏状态
+  async function initSidebarState() {
+    try {
+      const result = await chrome.storage.local.get(['sidebar_global_state']);
+      const isActive = result.sidebar_global_state || false;
+      
+      if (isActive) {
+        sidebarToggle.classList.add('active');
+      }
+    } catch (error) {
+      console.error('初始化侧边栏状态失败:', error);
+    }
+  }
+
+  // 确保content script已注入
+  async function ensureContentScriptInjected(tabId) {
+    try {
+      // 尝试发送测试消息
+      await chrome.tabs.sendMessage(tabId, { action: 'ping' });
+      return true;
+    } catch (error) {
+      // 如果失败，注入content script
+      try {
+        await chrome.scripting.executeScript({
+          target: { tabId: tabId },
+          files: ['content.js']
+        });
+        await chrome.scripting.insertCSS({
+          target: { tabId: tabId },
+          files: ['content.css']
+        });
+        // 等待一下让script加载完成
+        await new Promise(resolve => setTimeout(resolve, 100));
+        return true;
+      } catch (injectError) {
+        console.error('注入content script失败:', injectError);
+        return false;
+      }
+    }
+  }
+
+  // 刷新侧边栏
+  async function refreshSidebar() {
+    try {
+      console.log('开始刷新侧边栏...');
+      
+      // 检查侧边栏是否打开
+      const result = await chrome.storage.local.get(['sidebar_global_state']);
+      const isActive = result.sidebar_global_state || false;
+      console.log('侧边栏状态:', isActive);
+      
+      if (isActive) {
+        // 获取当前活动标签页
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        console.log('当前标签页:', tab ? tab.id : 'null');
+        
+        if (tab && tab.id) {
+          // 确保content script已注入
+          const scriptReady = await ensureContentScriptInjected(tab.id);
+          console.log('Content script准备状态:', scriptReady);
+          
+          if (scriptReady) {
+            // 发送刷新消息给content script
+            await chrome.tabs.sendMessage(tab.id, {
+              action: 'refreshSidebar'
+            });
+            console.log('侧边栏刷新消息已发送');
+          } else {
+            console.log('Content script未准备好，无法刷新侧边栏');
+          }
+        } else {
+          console.log('无法获取当前标签页，无法刷新侧边栏');
+        }
+      } else {
+        console.log('侧边栏未打开，跳过刷新');
+      }
+    } catch (error) {
+      console.error('刷新侧边栏失败:', error);
+    }
+  }
+
+  // 侧边栏开关按钮事件
+  sidebarToggle.addEventListener('click', async function() {
+    try {
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      const isCurrentlyActive = sidebarToggle.classList.contains('active');
+      
+      // 确保content script已注入
+      const scriptReady = await ensureContentScriptInjected(tab.id);
+      if (!scriptReady) {
+        updateStatus('无法在此页面使用侧边栏功能', 'error');
+        return;
+      }
+      
+      if (isCurrentlyActive) {
+        // 关闭侧边栏
+        sidebarToggle.classList.remove('active');
+        await chrome.storage.local.set({ 'sidebar_global_state': false });
+        
+        // 发送消息给content script关闭侧边栏
+        try {
+          await chrome.tabs.sendMessage(tab.id, {
+            action: 'hideSidebar'
+          });
+          updateStatus('侧边栏已关闭', 'success');
+        } catch (msgError) {
+          console.error('发送关闭消息失败:', msgError);
+          updateStatus('关闭侧边栏失败', 'error');
+        }
+      } else {
+        // 打开侧边栏
+        sidebarToggle.classList.add('active');
+        await chrome.storage.local.set({ 'sidebar_global_state': true });
+        
+        // 发送消息给content script显示侧边栏
+        try {
+          await chrome.tabs.sendMessage(tab.id, {
+            action: 'showSidebar'
+          });
+          updateStatus('侧边栏已打开', 'success');
+        } catch (msgError) {
+          console.error('发送显示消息失败:', msgError);
+          updateStatus('打开侧边栏失败', 'error');
+          sidebarToggle.classList.remove('active');
+          await chrome.storage.local.set({ 'sidebar_global_state': false });
+        }
+      }
+    } catch (error) {
+      console.error('切换侧边栏失败:', error);
+      updateStatus('操作失败: ' + error.message, 'error');
+    }
+  });
+
+  // 初始化侧边栏状态
+  initSidebarState();
   
   console.log('WebSnap popup.js 加载完成，所有事件监听器已设置');
 });
