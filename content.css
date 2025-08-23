@@ -22,6 +22,127 @@
   transform: translateX(100%);
 }
 
+.websnap-sidebar.minimized {
+  width: 40px;
+  height: 40px;
+  border-radius: 5%;
+  top: 20px;
+  right: 20px;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15), 0 3px 10px rgba(0, 0, 0, 0.1);
+  position: fixed;
+  cursor: move;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.websnap-sidebar.minimized .websnap-sidebar-header {
+  padding: 0;
+  border-bottom: none;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.websnap-sidebar.minimized .websnap-sidebar-header h3 {
+  display: none;
+}
+
+.websnap-sidebar.minimized .websnap-sidebar-content {
+  display: none;
+}
+
+.websnap-sidebar.minimized .websnap-close-btn {
+  display: none;
+}
+
+/* 独立的最小化按钮样式 */
+.websnap-minimize-btn-floating {
+  padding: 0;
+  font-size: 14px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  transition: all 0.2s ease;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  overflow: hidden;
+  line-height: 1;
+}
+
+
+
+.websnap-sidebar.minimized:hover {
+  transform: scale(1.05);
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.2), 0 5px 15px rgba(0, 0, 0, 0.15);
+}
+
+.websnap-sidebar.minimized:hover .websnap-minimize-btn-floating {
+  transform: translate(-50%, -50%) scale(1.05);
+}
+
+
+
+/* 最小化按钮样式 */
+.websnap-sidebar.minimized .websnap-minimize-btn {
+  padding: 0;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  transition: all 0.2s ease;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  overflow: hidden;
+  cursor: pointer;
+}
+
+/* 最小化按钮图片样式 */
+.websnap-minimize-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+/* 最小化状态下的图片样式 */
+.websnap-sidebar.minimized .websnap-minimize-icon {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin: 0;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+
+
+.websnap-sidebar.minimized:hover .websnap-minimize-btn {
+  transform: translate(-50%, -50%) scale(1.05);
+}
+
+
+
 .websnap-sidebar-header {
   padding: 10px;
   border-bottom: 1px solid rgba(0, 0, 0, 0.1);
@@ -33,29 +154,84 @@
   -webkit-backdrop-filter: blur(10px);
 }
 
+.websnap-header-buttons {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
 .websnap-sidebar-header h3 {
   margin: 0;
   font-size: 10px;
   font-weight: 600;
   color: rgba(0, 0, 0, 0.9);
   letter-spacing: -0.3px;
+  cursor: pointer;
+  transition: color 0.2s ease;
 }
 
-.websnap-close-btn {
-  background: none;
+.websnap-sidebar-header h3:hover {
+  color: #007bff;
+  text-decoration: underline;
+}
+
+.websnap-close-btn,
+.websnap-minimize-btn {
+  width: 20px;
+  height: 20px;
   border: none;
-  font-size: 20px;
-  color: rgba(0, 0, 0, 0.6);
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(0, 0, 0, 0.7);
   cursor: pointer;
-  padding: 4px 8px;
-  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   transition: all 0.2s ease;
   line-height: 1;
 }
 
-.websnap-close-btn:hover {
+/* 未最小化状态下隐藏图片，显示文本 */
+.websnap-sidebar:not(.minimized) .websnap-minimize-btn {
+  font-size: 12px;
+}
+
+.websnap-sidebar:not(.minimized) .websnap-minimize-btn::before {
+  content: '−';
+}
+
+.websnap-sidebar:not(.minimized) .websnap-minimize-icon {
+  display: none;
+}
+
+.websnap-close-btn {
+  width: 20px;
+  height: 20px;
+  border: none;
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(0, 0, 0, 0.7);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  line-height: 1;
+}
+
+.websnap-close-btn:hover,
+.websnap-minimize-btn:hover {
   background: rgba(0, 0, 0, 0.1);
   color: rgba(0, 0, 0, 0.9);
+}
+
+.websnap-minimize-btn {
+  font-size: 14px;
+  font-weight: bold;
 }
 
 .websnap-sidebar-content {
@@ -70,6 +246,8 @@
   cursor: pointer;
   transition: all 0.2s ease;
   background: transparent;
+  position: relative;
+  display: block;
 }
 
 .websnap-history-item:hover {
@@ -78,6 +256,36 @@
 
 .websnap-history-item:active {
   background: rgba(0, 122, 255, 0.1);
+}
+
+.websnap-history-content {
+  padding-right: 20px;
+  min-width: 0;
+}
+
+.websnap-unpin-btn {
+  opacity: 0;
+  background: none;
+  border: none;
+  color: rgba(0, 0, 0, 0.5);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  font-size: 12px;
+  transition: all 0.2s ease;
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.websnap-history-item:hover .websnap-unpin-btn {
+  opacity: 1;
+}
+
+.websnap-unpin-btn:hover {
+  background: rgba(255, 59, 48, 0.1);
+  color: rgba(255, 59, 48, 0.8);
 }
 
 .websnap-history-title {
@@ -179,11 +387,13 @@ body.websnap-sidebar-open {
     color: rgba(255, 255, 255, 0.9);
   }
   
-  .websnap-close-btn {
+  .websnap-close-btn,
+  .websnap-minimize-btn {
     color: rgba(255, 255, 255, 0.6);
   }
   
-  .websnap-close-btn:hover {
+  .websnap-close-btn:hover,
+  .websnap-minimize-btn:hover {
     background: rgba(255, 255, 255, 0.1);
     color: rgba(255, 255, 255, 0.9);
   }
@@ -215,5 +425,14 @@ body.websnap-sidebar-open {
   
   .websnap-sidebar-content::-webkit-scrollbar-thumb:hover {
     background: rgba(255, 255, 255, 0.3);
+  }
+  
+  .websnap-unpin-btn {
+    color: rgba(255, 255, 255, 0.5);
+  }
+  
+  .websnap-unpin-btn:hover {
+    background: rgba(255, 69, 58, 0.2);
+    color: rgba(255, 69, 58, 0.9);
   }
 }

@@ -212,6 +212,16 @@ document.addEventListener('DOMContentLoaded', async function() {
         const type = item.type || 'unknown';
         const thumbHTML = item.thumbnail ? `<div class="item-thumb"><img src="${item.thumbnail}" alt="缩略图"></div>` : '';
         
+        // 检查pin状态
+        let isPinned = true; // 默认是固定的
+        try {
+            const result = await chrome.storage.local.get(['unpinList']);
+            const unpinList = result.unpinList || [];
+            isPinned = !unpinList.includes(item.id);
+        } catch (error) {
+            console.error('检查pin状态失败:', error);
+        }
+        
         // 检查是否需要显示同步状态
         let syncStatusHTML = '';
         try {
@@ -227,7 +237,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         screenshotDiv.innerHTML = `
             <div class="item-header">
                 <div class="item-title" title="${filename}">📄 ${filename}</div>
-                <div class="item-type">${type === 'full' ? '📏 长截图' : type === 'area' ? '🔲 区域截图' : '📸 普通截图'}</div>
+                <div class="item-type">${type === 'full' ? '📏 长截图' : type === 'area' ? '🔲 区域截图' : '📸 普通截图'} <span class="pin-btn" data-id="${item.id}" title="${isPinned ? '取消固定' : '固定'}" style="cursor: pointer; margin-left: 4px;">${isPinned ? '📌' : '📍'}</span></div>
             </div>
             <div class="item-subtitle" title="${title}">${title}</div>
             <div class="item-url" title="${url}">🌐 ${url}</div>
@@ -271,6 +281,15 @@ document.addEventListener('DOMContentLoaded', async function() {
         editBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             showEditModal(item);
+        });
+        
+        // 点击pin按钮
+        const pinBtn = itemElement.querySelector('.pin-btn');
+        pinBtn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            await togglePinStatus(item.id);
+            // 局部更新按钮状态，避免全局刷新
+            await updatePinButtonStatus(pinBtn, item.id);
         });
         
         // 点击删除按钮
@@ -409,6 +428,16 @@ document.addEventListener('DOMContentLoaded', async function() {
         const type = item.type || 'unknown';
         const thumbHTML = item.thumbnail ? `<div class="item-thumb"><img src="${item.thumbnail}" alt="缩略图"></div>` : '';
         
+        // 检查pin状态
+        let isPinned = true; // 默认是固定的
+        try {
+            const result = await chrome.storage.local.get(['unpinList']);
+            const unpinList = result.unpinList || [];
+            isPinned = !unpinList.includes(item.id);
+        } catch (error) {
+            console.error('检查pin状态失败:', error);
+        }
+        
         // 检查是否需要显示同步状态
         let syncStatusHTML = '';
         try {
@@ -424,7 +453,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         itemDiv.innerHTML = `
             <div class="item-header">
                 <div class="item-title" title="${filename}">📄 ${filename}</div>
-                <div class="item-type">${type === 'full' ? '📏 长截图' : type === 'area' ? '🔲 区域截图' : '📸 普通截图'}</div>
+                <div class="item-type">${type === 'full' ? '📏 长截图' : type === 'area' ? '🔲 区域截图' : '📸 普通截图'} <span class="pin-btn" data-id="${item.id}" title="${isPinned ? '取消固定' : '固定'}" style="cursor: pointer; margin-left: 4px;">${isPinned ? '📌' : '📍'}</span></div>
             </div>
             <div class="item-subtitle" title="${title}">${title}</div>
             <div class="item-url" title="${url}">🌐 ${url}</div>
@@ -466,6 +495,43 @@ document.addEventListener('DOMContentLoaded', async function() {
         addItemEventListeners(itemDiv, item);
         
         return itemDiv;
+    }
+    
+    // 切换pin状态
+    async function togglePinStatus(itemId) {
+        try {
+            const result = await chrome.storage.local.get(['unpinList']);
+            let unpinList = result.unpinList || [];
+            
+            const index = unpinList.indexOf(itemId);
+            if (index > -1) {
+                // 如果在unpin列表中，移除它（变为pinned）
+                unpinList.splice(index, 1);
+            } else {
+                // 如果不在unpin列表中，添加它（变为unpinned）
+                unpinList.push(itemId);
+            }
+            
+            await chrome.storage.local.set({ unpinList });
+            console.log('Pin状态已更新:', itemId, '当前unpinList:', unpinList);
+        } catch (error) {
+            console.error('更新pin状态失败:', error);
+        }
+    }
+    
+    // 局部更新pin按钮状态
+    async function updatePinButtonStatus(pinBtn, itemId) {
+        try {
+            const result = await chrome.storage.local.get(['unpinList']);
+            const unpinList = result.unpinList || [];
+            const isPinned = !unpinList.includes(itemId);
+            
+            // 更新按钮文本和title
+            pinBtn.textContent = isPinned ? '📌' : '📍';
+            pinBtn.title = isPinned ? '取消固定' : '固定';
+        } catch (error) {
+            console.error('更新按钮状态失败:', error);
+        }
     }
     
     // 显示项目详细信息

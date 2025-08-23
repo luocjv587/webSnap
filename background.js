@@ -195,6 +195,13 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
     return true;
   }
   
+  // 处理打开历史记录页面请求
+  if (request.action === 'openHistoryPage') {
+    chrome.tabs.create({ url: chrome.runtime.getURL('history.html') });
+    sendResponse({ success: true });
+    return true;
+  }
+  
 
 });
 
@@ -2562,3 +2569,57 @@ async function uploadFileToNotion(filePath, notionToken) {
     throw error;
   }
 }
+
+// 监听标签页切换事件，检查侧边栏状态并刷新数据
+chrome.tabs.onActivated.addListener(async (activeInfo) => {
+  try {
+    console.log('标签页切换，检查侧边栏状态:', activeInfo.tabId);
+    
+    // 检查全局侧边栏状态
+    const result = await chrome.storage.local.get(['sidebar_global_state']);
+    
+    if (result.sidebar_global_state) {
+      // 如果侧边栏应该显示，向新激活的标签页发送消息
+      try {
+        await chrome.tabs.sendMessage(activeInfo.tabId, {
+          action: 'refreshSidebar'
+        });
+        console.log('已向标签页发送刷新侧边栏消息');
+      } catch (error) {
+        // 如果content script还没有加载，忽略错误
+        console.log('标签页可能还没有加载content script，跳过刷新');
+      }
+    }
+  } catch (error) {
+    console.error('标签页切换处理失败:', error);
+  }
+});
+
+// 监听标签页更新事件，当页面加载完成时检查侧边栏状态
+chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
+  try {
+    // 只在页面加载完成时处理
+    if (changeInfo.status === 'complete' && tab.url && !tab.url.startsWith('chrome://')) {
+      console.log('页面加载完成，检查侧边栏状态:', tabId);
+      
+      // 检查全局侧边栏状态
+      const result = await chrome.storage.local.get(['sidebar_global_state']);
+      
+      if (result.sidebar_global_state) {
+        // 延迟一点时间确保content script已加载
+        setTimeout(async () => {
+          try {
+            await chrome.tabs.sendMessage(tabId, {
+              action: 'showSidebar'
+            });
+            console.log('已向新加载的页面显示侧边栏');
+          } catch (error) {
+            console.log('无法向页面发送显示侧边栏消息，可能是受限页面');
+          }
+        }, 500);
+      }
+    }
+  } catch (error) {
+    console.error('标签页更新处理失败:', error);
+  }
+});
